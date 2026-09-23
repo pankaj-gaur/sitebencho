@@ -1,50 +1,29 @@
 {
-  "requestsFinished": 4,
-  "requestsFailed": 1,
-  "requestsRetries": 1,
-  "requestsFailedPerMinute": 9,
-  "requestsFinishedPerMinute": 40,
-  "requestMinDurationMillis": 894,
-  "requestMaxDurationMillis": 2373,
-  "requestTotalFailedDurationMillis": 211,
-  "requestTotalFinishedDurationMillis": 5476,
-  "crawlerStartedAt": "2026-09-23T04:50:31.039Z",
-  "crawlerFinishedAt": "2026-09-23T04:50:36.977Z",
-  "statsPersistedAt": "2026-09-23T04:50:36.977Z",
-  "crawlerRuntimeMillis": 6073,
-  "crawlerLastStartTimestamp": 1790139030904,
+  "requestsFinished": 1,
+  "requestsFailed": 0,
+  "requestsRetries": 0,
+  "requestsFailedPerMinute": 0,
+  "requestsFinishedPerMinute": 9,
+  "requestMinDurationMillis": 6163,
+  "requestMaxDurationMillis": 6163,
+  "requestTotalFailedDurationMillis": 0,
+  "requestTotalFinishedDurationMillis": 6163,
+  "crawlerStartedAt": "2026-09-23T14:59:13.129Z",
+  "crawlerFinishedAt": "2026-09-23T14:59:20.094Z",
+  "statsPersistedAt": "2026-09-23T14:59:20.095Z",
+  "crawlerRuntimeMillis": 7011,
+  "crawlerLastStartTimestamp": 1790175553084,
   "requestRetryHistogram": [
-    4,
     1
   ],
   "statsId": "1",
-  "requestAvgFailedDurationMillis": 211,
-  "requestAvgFinishedDurationMillis": 1369,
-  "requestTotalDurationMillis": 5687,
-  "requestsTotal": 5,
+  "requestAvgFailedDurationMillis": null,
+  "requestAvgFinishedDurationMillis": 6163,
+  "requestTotalDurationMillis": 6163,
+  "requestsTotal": 1,
   "requestsWithStatusCode": {
-    "200": 4
+    "200": 1
   },
-  "errors": {
-    "C:\\Projects\\Site Diff Inspector\\site-diff-inspector\\node_modules\\@crawlee\\playwright\\internals\\utils\\playwright-utils.js:168:17": {
-      "missing error code": {
-        "Error": {
-          "page.goto: Download is starting": {
-            "count": 1
-          }
-        }
-      }
-    }
-  },
-  "retryErrors": {
-    "C:\\Projects\\Site Diff Inspector\\site-diff-inspector\\node_modules\\@crawlee\\playwright\\internals\\utils\\playwright-utils.js:168:17": {
-      "missing error code": {
-        "Error": {
-          "page.goto: Download is starting": {
-            "count": 1
-          }
-        }
-      }
-    }
-  }
+  "errors": {},
+  "retryErrors": {}
 }

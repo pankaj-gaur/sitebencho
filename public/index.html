@@ -1121,6 +1121,54 @@
     border-radius: 4px;
   }
 
+  /* Small confirmation dialog (mode-switch reset warning) */
+  .confirm-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(17, 17, 17, 0.55);
+    backdrop-filter: blur(3px);
+    z-index: 3000;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .confirm-overlay.open { display: flex; animation: modalFadeIn 0.18s var(--ease); }
+  .confirm-box {
+    background: var(--cb-white);
+    border: 1px solid var(--cb-border);
+    border-top: 4px solid var(--amber);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-lg);
+    max-width: 420px;
+    width: 100%;
+    padding: 20px 22px 18px;
+  }
+  .confirm-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 15px;
+    font-weight: 800;
+    color: var(--cb-ink);
+    margin: 0 0 8px;
+  }
+  .confirm-title svg.lucide { color: var(--amber); width: 18px; height: 18px; }
+  .confirm-msg { font-size: 13px; color: var(--cb-ink-soft); line-height: 1.55; margin: 0 0 18px; }
+  .confirm-actions { display: flex; justify-content: flex-end; gap: 8px; }
+  .confirm-cancel-btn {
+    border-radius: var(--radius-pill);
+    font-family: var(--font-body);
+    font-weight: 700;
+    font-size: 12.5px;
+    color: var(--cb-ink);
+    background: var(--cb-white);
+    border: 1px solid var(--cb-border);
+    padding: 9px 18px;
+    cursor: pointer;
+  }
+  .confirm-cancel-btn:hover { background: var(--cb-surface); }
+
   /* Responsive layout tweaks */
   @media (max-width: 1024px) {
     .dash {
@@ -1326,13 +1374,24 @@ https://example.com/page-3" rows="4"></textarea>
 </div>
 </div>
 </div>
+<!-- Mode-switch reset confirmation -->
+<div class="confirm-overlay" id="confirmOverlay">
+<div aria-labelledby="confirmTitle" aria-modal="true" class="confirm-box" role="alertdialog">
+<div class="confirm-title" id="confirmTitle"><i data-lucide="alert-triangle"></i> <span id="confirmTitleText">Reset test bench?</span></div>
+<p class="confirm-msg" id="confirmMsg"></p>
+<div class="confirm-actions">
+<button class="confirm-cancel-btn" id="confirmCancelBtn" type="button">Cancel</button>
+<button class="primary" id="confirmOkBtn" type="button">OK, reset</button>
+</div>
+</div>
+</div>
 <script>
 (function(){
   "use strict";
 
   const state = {
-    bench: { pages: [], mode: "crawl", invalidCount: 0 },
-    cand:  { pages: [], mode: "crawl", invalidCount: 0 },
+    bench: { pages: [], mode: "crawl", invalidCount: 0, listRegistered: false },
+    cand:  { pages: [], mode: "crawl", invalidCount: 0, listRegistered: false },
     results: []
   };
 
@@ -1371,8 +1430,17 @@ https://example.com/page-3" rows="4"></textarea>
     }catch(e){ return urlStr; }
   }
 
+  // The URLs are already known in list mode — no need to wait for an actual
+  // render just to LIST them. This gives an instant table preview as soon as
+  // the textarea has content; the real crawlOne() call (at Start testing
+  // time) overwrites these placeholders with the actually-rendered titles.
+  // NOTE: this preview is client-only and does NOT mean the list has been
+  // registered/rendered server-side — see state[slot].listRegistered below,
+  // which is what actually gates whether a fresh render happens before
+  // testing runs.
   function previewListMode(slot){
     if(state[slot].mode !== "list") return;
+    state[slot].listRegistered = false;
     const urls = parseUrlListText($(`${slot}UrlList`).value);
     state[slot].pages = urls.map(u => ({ title: "(not yet rendered)", url: u, path: pathFromUrl(u) }));
     state[slot].invalidCount = 0;
@@ -1384,6 +1452,7 @@ https://example.com/page-3" rows="4"></textarea>
   function setMode(mode){
     ["bench", "cand"].forEach(slot => {
       state[slot].mode = mode;
+      state[slot].listRegistered = false;
       const toggle = $(`${slot}ModeToggle`);
       toggle.querySelectorAll("button").forEach(b => b.classList.toggle("active", b.getAttribute("data-mode") === mode));
       $(`${slot}CrawlInput`).style.display = mode === "crawl" ? "" : "none";
@@ -1408,10 +1477,132 @@ https://example.com/page-3" rows="4"></textarea>
     refreshIcons();
   }
 
+  // ---- Mode-switch reset ---------------------------------------------------
+
+  // Small promise-based dialog. showCancel:false turns it into a plain
+  // notice (single OK button) — used when a switch is blocked.
+  function confirmDialog({ title, message, okLabel = "OK, reset", showCancel = true }){
+    return new Promise(resolve => {
+      const overlay = $("confirmOverlay");
+      $("confirmTitleText").textContent = title;
+      $("confirmMsg").textContent = message;
+      $("confirmOkBtn").textContent = okLabel;
+      $("confirmCancelBtn").style.display = showCancel ? "" : "none";
+      overlay.classList.add("open");
+      refreshIcons();
+      $("confirmOkBtn").focus();
+
+      function finish(result){
+        overlay.classList.remove("open");
+        $("confirmOkBtn").removeEventListener("click", onOk);
+        $("confirmCancelBtn").removeEventListener("click", onCancel);
+        overlay.removeEventListener("click", onBackdrop);
+        document.removeEventListener("keydown", onKey, true);
+        resolve(result);
+      }
+      function onOk(){ finish(true); }
+      function onCancel(){ finish(false); }
+      function onBackdrop(e){ if(e.target === overlay) finish(false); }
+      function onKey(e){
+        if(e.key === "Escape"){ e.stopPropagation(); finish(false); }
+      }
+      $("confirmOkBtn").addEventListener("click", onOk);
+      $("confirmCancelBtn").addEventListener("click", onCancel);
+      overlay.addEventListener("click", onBackdrop);
+      document.addEventListener("keydown", onKey, true);
+    });
+  }
+
+  // True if there's anything on screen a reset would throw away.
+  function hasSessionState(){
+    return state.bench.pages.length > 0
+      || state.cand.pages.length > 0
+      || state.results.length > 0
+      || $("aiSummaryWrap").style.display !== "none"
+      || parseFloat($("benchBar").style.width) > 0
+      || parseFloat($("candBar").style.width) > 0
+      || parseFloat($("testBar").style.width) > 0;
+  }
+
+  // Puts every piece of on-screen session state back to how it looks on a
+  // fresh page load — crawled/listed pages, the comparison ledger, KPI
+  // numbers, ALL progress bars and status lines, the AI summary panel, the
+  // list-length warning, and any open details popup. Typed URLs / pasted
+  // lists are deliberately kept so the person doesn't have to re-enter them.
+  function resetClientState(){
+    if(aiPollTimer){ clearInterval(aiPollTimer); aiPollTimer = null; }
+    $("aiSummaryWrap").style.display = "none";
+    $("aiSummaryBody").innerHTML = "";
+
+    closeTestDetailsModal();
+
+    ["bench", "cand"].forEach(slot => {
+      state[slot].pages = [];
+      state[slot].invalidCount = 0;
+      state[slot].listRegistered = false;
+      setBar(slot, 0, "");
+      const statusEl = $(`${slot}Status`);
+      statusEl.textContent = "Enter both URLs, then press Crawl sites.";
+      statusEl.className = "status-line";
+      renderPanel(slot);
+    });
+
+    state.results = [];
+    setTestBar(0, "");
+    const tp = $("testProgress");
+    tp.style.display = "none";
+    tp.textContent = "";
+    tp.className = "status-line";
+    $("ledgerBody").innerHTML = `<tr><td colspan="6"><div class="empty">Crawl both sites, then press Start testing (enabled once both finish).</div></td></tr>`;
+
+    $("statGreen").textContent = "–";
+    $("statRed").textContent = "–";
+    $("statAmber").textContent = "–";
+    $("dividerNode").textContent = "·";
+    $("dividerNode").style.color = "";
+    $("listMismatchWarning").style.display = "none";
+
+    updateDashboard();
+  }
+
+  const MODE_LABELS = { crawl: "Crawl a site", list: "Use a URL list", history: "Load from history" };
+
+  async function requestModeChange(mode){
+    if(mode === state.bench.mode) return;
+
+    if(busy){
+      await confirmDialog({
+        title: "Test in progress",
+        message: "A crawl or comparison test is still running. Wait for it to finish before switching modes.",
+        okLabel: "OK",
+        showCancel: false,
+      });
+      return;
+    }
+
+    if(hasSessionState()){
+      const ok = await confirmDialog({
+        title: "Reset test bench?",
+        message: `Switching to "${MODE_LABELS[mode]}" will reset the test bench — crawled pages, test results, progress and the AI summary will be cleared. Your entered URLs are kept.`,
+      });
+      if(!ok) return; // Cancel — preserve everything exactly as it is
+    }
+
+    try{
+      await api("/api/reset/diff", { method: "POST", body: JSON.stringify({}) });
+    }catch(e){
+      await confirmDialog({ title: "Couldn't reset", message: e.message, okLabel: "OK", showCancel: false });
+      return; // server refused (e.g. a test still running) — keep current state
+    }
+
+    resetClientState();
+    setMode(mode);
+  }
+
   function setupModeToggle(slot){
     const toggle = $(`${slot}ModeToggle`);
     toggle.querySelectorAll("button").forEach(btn => {
-      btn.addEventListener("click", () => setMode(btn.getAttribute("data-mode")));
+      btn.addEventListener("click", () => requestModeChange(btn.getAttribute("data-mode")));
     });
   }
 
@@ -1437,10 +1628,16 @@ https://example.com/page-3" rows="4"></textarea>
     select.addEventListener("change", async () => {
       updateCrawlButtonState();
       if(!select.value) return;
-      await crawlOne(slot, `${slot}Url`, `${slot}Status`);
+      busy = true;
+      try{
+        await crawlOne(slot, `${slot}Url`, `${slot}Status`);
+      }finally{
+        busy = false;
+      }
       updateDashboard();
       if(state.bench.pages.length || state.cand.pages.length) alignPanels();
       updateCrawlButtonState();
+      pollAiSummary();
     });
   }
 
@@ -1713,6 +1910,7 @@ https://example.com/page-3" rows="4"></textarea>
       const result = await crawlPromise;
       state[slot].pages = result.pages;
       state[slot].invalidCount = result.invalidCount || 0;
+      if(mode === "list") state[slot].listRegistered = true;
       renderPanel(slot);
       updateDashboard();
       setBar(slot, 100, "done");
@@ -1738,6 +1936,9 @@ https://example.com/page-3" rows="4"></textarea>
   }
 
   let crawling = false;
+  // True while ANY crawl / list render / history load / test is running —
+  // mode switching is blocked during that time (see requestModeChange).
+  let busy = false;
 
   function updateListMismatchWarning(){
     const el = $("listMismatchWarning");
@@ -1768,6 +1969,7 @@ https://example.com/page-3" rows="4"></textarea>
   async function crawlSites(){
     if(crawling) return;
     crawling = true;
+    busy = true;
     $("btnCrawl").disabled = true;
     $("btnTest").disabled = true;
 
@@ -1797,6 +1999,7 @@ https://example.com/page-3" rows="4"></textarea>
     updateListMismatchWarning();
 
     crawling = false;
+    busy = false;
     updateCrawlButtonState();
     pollAiSummary();
   }
@@ -2018,9 +2221,20 @@ https://example.com/page-3" rows="4"></textarea>
   });
 
   async function startTesting(){
+    if(busy) return;
+    busy = true;
+    try{
+      await runTesting();
+    }finally{
+      busy = false;
+      updateCrawlButtonState();
+    }
+  }
+
+  async function runTesting(){
     $("ledgerWrap").scrollIntoView({ behavior: "smooth", block: "start" });
 
-    if(state.bench.mode === "list" && (state.bench.pages.length === 0 || state.cand.pages.length === 0)){
+    if(state.bench.mode === "list" && (!state.bench.listRegistered || !state.cand.listRegistered)){
       $("btnTest").disabled = true;
       $("btnCrawl").disabled = true;
       await crawlOne("bench", "benchUrl", "benchStatus");

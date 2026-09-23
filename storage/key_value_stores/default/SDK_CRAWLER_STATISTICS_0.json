@@ -1,50 +1,29 @@
 {
-  "requestsFinished": 4,
-  "requestsFailed": 2,
-  "requestsRetries": 2,
-  "requestsFailedPerMinute": 1,
-  "requestsFinishedPerMinute": 4,
-  "requestMinDurationMillis": 979,
-  "requestMaxDurationMillis": 4337,
-  "requestTotalFailedDurationMillis": 770,
-  "requestTotalFinishedDurationMillis": 10684,
-  "crawlerStartedAt": "2026-09-23T04:49:25.237Z",
-  "crawlerFinishedAt": "2026-09-23T04:50:31.083Z",
-  "statsPersistedAt": "2026-09-23T04:50:31.084Z",
-  "crawlerRuntimeMillis": 66045,
-  "crawlerLastStartTimestamp": 1790138965039,
+  "requestsFinished": 1,
+  "requestsFailed": 0,
+  "requestsRetries": 0,
+  "requestsFailedPerMinute": 0,
+  "requestsFinishedPerMinute": 6,
+  "requestMinDurationMillis": 8843,
+  "requestMaxDurationMillis": 8843,
+  "requestTotalFailedDurationMillis": 0,
+  "requestTotalFinishedDurationMillis": 8843,
+  "crawlerStartedAt": "2026-09-23T14:59:01.444Z",
+  "crawlerFinishedAt": "2026-09-23T14:59:11.603Z",
+  "statsPersistedAt": "2026-09-23T14:59:11.604Z",
+  "crawlerRuntimeMillis": 10218,
+  "crawlerLastStartTimestamp": 1790175541386,
   "requestRetryHistogram": [
-    4,
-    2
+    1
   ],
   "statsId": "0",
-  "requestAvgFailedDurationMillis": 385,
-  "requestAvgFinishedDurationMillis": 2671,
-  "requestTotalDurationMillis": 11454,
-  "requestsTotal": 6,
+  "requestAvgFailedDurationMillis": null,
+  "requestAvgFinishedDurationMillis": 8843,
+  "requestTotalDurationMillis": 8843,
+  "requestsTotal": 1,
   "requestsWithStatusCode": {
-    "200": 4
+    "200": 1
   },
-  "errors": {
-    "C:\\Projects\\Site Diff Inspector\\site-diff-inspector\\node_modules\\@crawlee\\playwright\\internals\\utils\\playwright-utils.js:168:17": {
-      "missing error code": {
-        "Error": {
-          "page.goto: Download is starting": {
-            "count": 2
-          }
-        }
-      }
-    }
-  },
-  "retryErrors": {
-    "C:\\Projects\\Site Diff Inspector\\site-diff-inspector\\node_modules\\@crawlee\\playwright\\internals\\utils\\playwright-utils.js:168:17": {
-      "missing error code": {
-        "Error": {
-          "page.goto: Download is starting": {
-            "count": 15
-          }
-        }
-      }
-    }
-  }
+  "errors": {},
+  "retryErrors": {}
 }

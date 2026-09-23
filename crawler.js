@@ -76,6 +76,12 @@ async function getSitemapUrls(origin, { maxUrls = 500, maxSubSitemaps = 25 } = {
  * enqueued for further crawling (site-crawl mode). When false, ONLY the
  * URLs in `startRequests` are ever visited — nothing is followed beyond
  * that list (explicit URL-list mode).
+ *
+ * `startRequests` entries may be plain URL strings, or Crawlee request
+ * objects ({ url, userData }) — the latter is used by renderUrlList() below
+ * to stamp each request with its original list position (userData.origIndex),
+ * since queue concurrency means pages don't necessarily finish rendering in
+ * the order they were submitted.
  */
 async function runPlaywrightCrawl(startRequests, {
   maxPages,
@@ -170,7 +176,10 @@ async function runPlaywrightCrawl(startRequests, {
         // every crawled page here was pure memory bloat with no reader,
         // and on a several-hundred-page site that's enough to exhaust
         // Node's memory and crash or stall the process.
-        pages.set(pathKey, { title, url: loadedUrl, path: pathKey });
+        const origIndex = request.userData && typeof request.userData.origIndex === 'number'
+          ? request.userData.origIndex
+          : undefined;
+        pages.set(pathKey, { title, url: loadedUrl, path: pathKey, ...(origIndex !== undefined ? { origIndex } : {}) });
 
         if (pages.size % 25 === 0) {
           const mb = Math.round(process.memoryUsage().rss / 1024 / 1024);
@@ -288,26 +297,94 @@ async function crawlSite(startUrl, { maxPages = 500, requestsPerMinute = 20, use
 }
 
 /**
- * Registers an EXPLICIT list of URLs exactly as given — no crawling, no
- * rendering, no sitemap lookup, no link discovery. The person already told
- * us precisely which URLs they want; there's nothing left to discover, and
- * validating a URL string is instant, so this never touches Playwright.
- * This is what makes "Use a URL list" behave like "Load from history" —
- * the page list appears immediately, with no crawl step to wait through.
+ * Renders EXACTLY the given URLs with a real headless browser (so titles
+ * and client-rendered content are accurate) — but unlike crawlSite(), never
+ * seeds from a sitemap and never follows links found on the page
+ * (discover:false is passed through to runPlaywrightCrawl). This is what
+ * powers "Use a URL list" mode: the person told us precisely which pages
+ * they want checked, so the render is restricted to just those pages — no
+ * sitemap lookup, no link-following, nothing added or removed beyond what
+ * was pasted/uploaded.
  *
- * Deliberately does NOT deduplicate: unlike the old sitemap/discovery path,
- * this list may be paired position-by-position against another list (Site
- * Diff's benchmark vs candidate) where entry N always means entry N on both
- * sides — silently dropping a "duplicate" would shift every later position
- * out of alignment. Order is preserved exactly as submitted.
+ * Order is preserved and NOT deduplicated by path — needed for Diff
+ * Inspector's position pairing, where the Nth benchmark URL always
+ * corresponds to the Nth candidate URL (which may share a normalized path
+ * across two different domains, e.g. both "/").
+ *
+ * Returns { origin, pages: Map<key, {title, url, path}>, invalidCount } —
+ * same shape crawlSite() returns, so callers don't need to know which path
+ * produced it. The Map key is `${index}::${path}` (not the bare path),
+ * matching the old registerUrlList() behavior, so two different domains
+ * that happen to share a path stay distinct entries.
+ */
+async function renderUrlList(urls, { maxPages = 500, requestsPerMinute = 20, userAgent, onProgress, registerStop } = {}) {
+  const HARD_CEILING = Math.min(maxPages || 500, 500);
+  const validUrls = [];
+  let invalidCount = 0;
+
+  (urls || []).forEach((raw) => {
+    const candidate = String(raw || '').trim();
+    if (!candidate) return;
+    if (validUrls.length >= HARD_CEILING) return;
+    try {
+      const parsed = new URL(candidate);
+      if (!/^https?:$/.test(parsed.protocol)) throw new Error('not http(s)');
+      validUrls.push(parsed.href);
+    } catch (e) {
+      invalidCount += 1;
+    }
+  });
+
+  if (validUrls.length === 0) {
+    throw new Error(
+      `No valid URLs found in the list provided.${invalidCount ? ` ${invalidCount} line(s) could not be parsed as a URL.` : ''}`
+    );
+  }
+
+  const startRequests = validUrls.map((url, i) => ({ url, userData: { origIndex: i } }));
+
+  // discover:false is the whole point of this function — only these exact
+  // URLs are ever visited; nothing found ON them is followed, and no
+  // sitemap is read for any of their origins.
+  const { pages: renderedByPath } = await runPlaywrightCrawl(startRequests, {
+    maxPages: startRequests.length,
+    requestsPerMinute,
+    userAgent,
+    onProgress,
+    registerStop,
+    discover: false,
+    sourceLabel: 'URL list',
+  });
+
+  // Rebuild in original list order (queue concurrency means pages don't
+  // necessarily finish in input order) and re-key by ${index}::${path} so
+  // two different URLs that happen to share a normalized path (e.g. both
+  // "/" on two different domains) stay distinct, position-paired entries —
+  // matching how registerUrlList() used to key its Map.
+  const entries = Array.from(renderedByPath.values())
+    .map((p, fallbackIdx) => ({
+      idx: typeof p.origIndex === 'number' ? p.origIndex : fallbackIdx,
+      page: { title: p.title, url: p.url, path: p.path },
+    }))
+    .sort((a, b) => a.idx - b.idx);
+
+  const pages = new Map(entries.map((e) => [`${e.idx}::${e.page.path}`, e.page]));
+  const origin = new URL(validUrls[0]).origin;
+  return { origin, pages, invalidCount };
+}
+
+/**
+ * Registers an EXPLICIT list of URLs exactly as given — no crawling, no
+ * rendering, no sitemap lookup, no link discovery. Kept for reference/back-
+ * compat only; the app now uses renderUrlList() above instead, so that
+ * "Use a URL list" mode gets real rendered titles rather than a path
+ * placeholder. Not called anywhere in server.js as of this version.
  *
  * Returns { origin, pages: Map<key, {title, url, path}>, invalidCount } —
  * same shape crawlSite() returns, so callers don't need to know which path
  * produced it. The Map key is NOT the bare path (two different domains can
  * legitimately share a path, e.g. both have "/") — it's `${index}::${path}`,
- * which stays unique regardless of cross-domain collisions. Nothing outside
- * this module ever looks a page up by that key; everything else only ever
- * iterates .values(), so this is invisible to every other caller.
+ * which stays unique regardless of cross-domain collisions.
  */
 function registerUrlList(urls) {
   const HARD_CEILING = 500;
@@ -339,4 +416,4 @@ function registerUrlList(urls) {
   return { origin, pages, invalidCount };
 }
 
-module.exports = { crawlSite, registerUrlList, normalizePath, getSitemapUrls };
+module.exports = { crawlSite, renderUrlList, registerUrlList, normalizePath, getSitemapUrls };

@@ -2,7 +2,7 @@ const express = require('express');
 const path = require('path');
 const { chromium } = require('playwright');
 const { diffHtml } = require('./diff-utils');
-const { crawlSite, registerUrlList } = require('./crawler');
+const { crawlSite, renderUrlList } = require('./crawler');
 const { checkPageLinks } = require('./linkcheck');
 const { runLighthouse } = require('./lighthouse-check');
 const {
@@ -215,6 +215,19 @@ const aiSummaryState = {
   analysis: { status: 'idle', error: null, updatedAt: null, entries: [], lastAttempt: null },
 };
 
+// Bumped every time a tool's session is reset (fresh crawl, or an explicit
+// mode-switch reset from the UI). An AI call that was already in flight when
+// the reset happened captures the OLD value, and when it eventually resolves
+// it sees the mismatch and discards its result — otherwise a summary from
+// the previous session would get appended into the brand-new session's
+// panel (and saved into its history row) a few seconds after the reset.
+const aiSummaryGen = { diff: 0, analysis: 0 };
+
+function resetAiSummaryState(type) {
+  aiSummaryGen[type] += 1;
+  aiSummaryState[type] = { status: 'idle', error: null, updatedAt: null, entries: [], lastAttempt: null };
+}
+
 // Fires the AI summary call in the background — the scan endpoint that
 // triggers this has already responded by the time it resolves. The frontend
 // polls GET /api/ai-summary/:type to pick up the "generating" -> "done"/
@@ -238,6 +251,7 @@ const aiSummaryState = {
 // can be manually retried later (see the /retry endpoint below) without the
 // caller having to reconstruct reportType/dataObject/onUpdate from scratch.
 function triggerAiSummary(type, reportType, dataObject, onUpdate) {
+  const myGen = aiSummaryGen[type];
   aiSummaryState[type] = {
     status: 'generating',
     error: null,
@@ -247,6 +261,7 @@ function triggerAiSummary(type, reportType, dataObject, onUpdate) {
   };
   generateAiSummary(reportType, dataObject)
     .then(({ text, provider, usedFallback }) => {
+      if (aiSummaryGen[type] !== myGen) return; // session was reset while this was generating — discard
       const entry = { reportType, text, html: markdownToHtml(text), provider, usedFallback, createdAt: new Date().toISOString() };
       const entries = [...aiSummaryState[type].entries, entry];
       aiSummaryState[type] = {
@@ -265,6 +280,7 @@ function triggerAiSummary(type, reportType, dataObject, onUpdate) {
       }
     })
     .catch((e) => {
+      if (aiSummaryGen[type] !== myGen) return; // session was reset while this was generating — discard
       // e.message is already the friendly, human-readable version (built in
       // ai-summary.js); e.raw carries the full provider response for anyone
       // debugging from the terminal.
@@ -391,6 +407,72 @@ app.get('/api/progress/:slot', (req, res) => {
   res.json({ ok: true, ...progress[slot] });
 });
 
+// ---------------------------------------------------------------------------
+// Session reset — called by the UI when the person switches between "Crawl a
+// site" / "Use a URL list" / "Load from history" and confirms the warning.
+// Clears EVERYTHING the server holds for that tool (crawled pages, progress,
+// test/scan results, AI summaries, per-row detail caches, history session
+// id) so the next poll or report download reflects a clean slate, exactly
+// as if the app had just been opened. Any crawl still running for the
+// tool's slots is cancelled. A test or scan loop that's mid-run can't be
+// safely interrupted (it would keep writing into the state being cleared),
+// so the reset is refused with 409 in that case and the UI keeps its state.
+// ---------------------------------------------------------------------------
+
+function cancelCrawl(slot) {
+  if (activeStop[slot]) {
+    try { activeStop[slot](); } catch (e) { /* best-effort */ }
+    activeStop[slot] = null;
+  }
+  crawlGeneration[slot] += 1; // any in-flight crawl response for this slot is now stale
+  store[slot] = null;
+  progress[slot] = { status: 'idle', found: 0, total: 0, error: null, pages: [] };
+}
+
+app.post('/api/reset/:type', (req, res) => {
+  const { type } = req.params;
+  if (type !== 'diff' && type !== 'analysis') {
+    return res.status(400).json({ ok: false, error: 'type must be "diff" or "analysis"' });
+  }
+
+  if (type === 'diff') {
+    if (testRunning) {
+      return res.status(409).json({ ok: false, error: 'A comparison test is still running. Wait for it to finish before switching modes.' });
+    }
+    cancelCrawl('bench');
+    cancelCrawl('cand');
+    diffSessionId = null;
+    diffPairMode = 'path';
+    testState.status = 'idle';
+    testState.done = 0;
+    testState.total = 0;
+    testState.error = null;
+    testState.results = [];
+    resetTestPageDetailsState();
+    resetAiSummaryState('diff');
+  } else {
+    if (linkScanRunning || lighthouseRunning) {
+      return res.status(409).json({ ok: false, error: 'A scan is still running. Wait for it to finish before switching modes.' });
+    }
+    cancelCrawl('site');
+    analysisSessionId = null;
+    linkScanState.status = 'idle';
+    linkScanState.done = 0;
+    linkScanState.total = 0;
+    linkScanState.error = null;
+    linkScanState.results = {};
+    lighthouseState.status = 'idle';
+    lighthouseState.done = 0;
+    lighthouseState.total = 0;
+    lighthouseState.error = null;
+    lighthouseState.results = {};
+    resetPageForecastState();
+    resetAiSummaryState('analysis');
+  }
+
+  res.json({ ok: true });
+});
+
 app.post('/api/crawl/:slot', async (req, res) => {
   const { slot } = req.params;
   if (!VALID_SLOTS.includes(slot)) {
@@ -433,7 +515,7 @@ app.post('/api/crawl/:slot', async (req, res) => {
     testState.error = null;
     testState.results = [];
     resetTestPageDetailsState();
-    aiSummaryState.diff = { status: 'idle', error: null, updatedAt: null, entries: [], lastAttempt: null };
+    resetAiSummaryState('diff');
   }
   if (slot === 'site') {
     analysisSessionId = null;
@@ -448,7 +530,7 @@ app.post('/api/crawl/:slot', async (req, res) => {
     lighthouseState.error = null;
     lighthouseState.results = {};
     resetPageForecastState();
-    aiSummaryState.analysis = { status: 'idle', error: null, updatedAt: null, entries: [], lastAttempt: null };
+    resetAiSummaryState('analysis');
   }
 
   const myGen = ++crawlGeneration[slot];
@@ -535,7 +617,7 @@ app.post('/api/crawl/:slot', async (req, res) => {
 
   try {
     const result = isListMode
-      ? registerUrlList(urls)
+      ? await renderUrlList(urls, { maxPages: maxPages || 500, ...commonOpts })
       : await crawlSite(startUrl, { maxPages: maxPages || 500, ...commonOpts });
 
     if (crawlGeneration[slot] !== myGen) {
