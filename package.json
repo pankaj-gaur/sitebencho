@@ -1,0 +1,20 @@
+{
+  "name": "site-diff-inspector",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Crawls a benchmark site and a candidate site, diffs rendered HTML, and checks candidate links for breaks.",
+  "main": "server.js",
+  "scripts": {
+    "postinstall": "playwright install --with-deps chromium",
+    "start": "node --max-old-space-size=8192 server.js",
+    "encrypt-secret": "node encrypt-secret.js"
+  },
+  "dependencies": {
+    "crawlee": "^3.11.5",
+    "playwright": "^1.48.0",
+    "express": "^4.21.0",
+    "linkinator": "^6.1.2",
+    "lighthouse": "^12.2.1",
+    "chrome-launcher": "^1.1.2"
+  }
+}

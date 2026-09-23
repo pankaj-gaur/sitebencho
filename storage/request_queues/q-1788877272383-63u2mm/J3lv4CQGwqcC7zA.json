@@ -1,0 +1,9 @@
+{
+	"id": "J3lv4CQGwqcC7zA",
+	"json": "{\"id\":\"J3lv4CQGwqcC7zA\",\"url\":\"https://contentbloom.com/blog/working-on-an-existing-codebase/\",\"loadedUrl\":\"https://contentbloom.com/blog/working-on-an-existing-codebase/\",\"uniqueKey\":\"https://contentbloom.com/blog/working-on-an-existing-codebase\",\"method\":\"GET\",\"noRetry\":false,\"retryCount\":0,\"errorMessages\":[],\"headers\":{},\"userData\":{\"__crawlee\":{\"state\":4}},\"handledAt\":\"2026-09-08T14:26:44.778Z\"}",
+	"method": "GET",
+	"orderNo": null,
+	"retryCount": 0,
+	"uniqueKey": "https://contentbloom.com/blog/working-on-an-existing-codebase",
+	"url": "https://contentbloom.com/blog/working-on-an-existing-codebase/"
+}

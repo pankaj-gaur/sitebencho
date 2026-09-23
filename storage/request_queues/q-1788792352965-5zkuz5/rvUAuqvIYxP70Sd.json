@@ -1,0 +1,9 @@
+{
+	"id": "rvUAuqvIYxP70Sd",
+	"json": "{\"id\":\"rvUAuqvIYxP70Sd\",\"url\":\"https://contentbloom.com/blog/top-4-how-to-tips-that-will-secure-your-web-forms/\",\"loadedUrl\":\"https://contentbloom.com/blog/top-4-how-to-tips-that-will-secure-your-web-forms/\",\"uniqueKey\":\"https://contentbloom.com/blog/top-4-how-to-tips-that-will-secure-your-web-forms\",\"method\":\"GET\",\"noRetry\":false,\"retryCount\":1,\"errorMessages\":[\"page.title: Target page, context or browser has been closed\\n    at PlaywrightCrawler.requestHandler (C:\\\\Projects\\\\Site Diff Inspector\\\\site-diff-inspector\\\\crawler.js:165:35)\\n    at async wrap (C:\\\\Projects\\\\Site Diff Inspector\\\\site-diff-inspector\\\\node_modules\\\\@apify\\\\timeout\\\\cjs\\\\index.cjs:56:21)\"],\"headers\":{},\"userData\":{\"__crawlee\":{\"state\":5}}}",
+	"method": "GET",
+	"orderNo": 1788792774024,
+	"retryCount": 1,
+	"uniqueKey": "https://contentbloom.com/blog/top-4-how-to-tips-that-will-secure-your-web-forms",
+	"url": "https://contentbloom.com/blog/top-4-how-to-tips-that-will-secure-your-web-forms/"
+}

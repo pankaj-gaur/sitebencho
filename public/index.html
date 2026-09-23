@@ -1,0 +1,2099 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Site Diff Inspector</title>
+<link href="https://fonts.googleapis.com" rel="preconnect">
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;1,400&amp;family=Roboto:wght@400;500;700;800&amp;display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest"></script>
+<style>
+  :root {
+    --cb-ink: #151515;
+    --cb-ink-soft: #363636;
+    --cb-white: #ffffff;
+    --cb-canvas: #f5f4f0;
+    --cb-surface: #eeece6;
+    --cb-muted: #737373;
+    --cb-border: #d8d6cf;
+    --cb-border-strong: #c2bfb6;
+    --cb-accent: #0085B2;
+    --cb-accent-hover: #006b90;
+    --cb-dark: #111111;
+
+    --panel: #ffffff;
+    --line: #d8d6cf;
+    --line-strong: #c2bfb6;
+
+    --green: #236338;
+    --green-soft: #e3efe6;
+    --red: #a32d26;
+    --red-soft: #f7e6e4;
+    --amber: #945815;
+    --amber-soft: #fbf0df;
+
+    --radius-sm: 4px;
+    --radius-md: 8px;
+    --radius-lg: 14px;
+    --radius-pill: 999px;
+
+    --shadow-sm: 0 1px 3px rgba(21, 21, 21, 0.05);
+    --shadow-md: 0 12px 32px rgba(21, 21, 21, 0.08);
+    --shadow-lg: 0 20px 48px rgba(21, 21, 21, 0.16);
+
+    --font-body: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+    --font-display: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+    --font-mono: 'IBM Plex Mono', ui-monospace, Menlo, Consolas, monospace;
+    --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    padding: 0;
+    background: var(--cb-canvas);
+    color: var(--cb-ink);
+    font-family: var(--font-body);
+    font-size: 14px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+  }
+
+  svg.lucide {
+    width: 15px;
+    height: 15px;
+    vertical-align: -2px;
+    display: inline-block;
+  }
+
+  .site-wrap {
+    max-width: 1320px;
+    margin: 0 auto;
+    padding: 32px 24px 64px;
+  }
+
+  /* Header & Navigation */
+  .cb-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--cb-border);
+    margin-bottom: 28px;
+    flex-wrap: wrap;
+  }
+  .brand-badge {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .brand-logo-mark {
+    width: 28px;
+    height: 28px;
+    background: var(--cb-ink);
+    color: #F6B565;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-family: var(--font-body);
+    border-radius: var(--radius-sm);
+    font-size: 14px;
+    letter-spacing: -0.05em;
+  }
+  .brand-name {
+    font-family: var(--font-body);
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--cb-ink);
+  }
+  .brand-tag {
+    font-size: 11px;
+    color: var(--cb-muted);
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    padding-left: 8px;
+    border-left: 1px solid var(--cb-border);
+  }
+
+  .nav {
+    display: inline-flex;
+    background: var(--cb-white);
+    border: 1px solid var(--cb-border);
+    border-radius: var(--radius-pill);
+    padding: 4px;
+    box-shadow: var(--shadow-sm);
+  }
+  .nav a {
+    font-family: var(--font-body);
+    font-size: 11.5px;
+    font-weight: 700;
+    color: var(--cb-ink-soft);
+    text-decoration: none;
+    padding: 7px 18px;
+    border-radius: var(--radius-pill);
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    transition: all 0.18s var(--ease);
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .nav a.active {
+    background: var(--cb-ink);
+    color: var(--cb-white);
+  }
+  .nav a:hover:not(.active) {
+    background: var(--cb-surface);
+    color: var(--cb-ink);
+  }
+
+  /* Masthead / Hero Title */
+  .masthead {
+    margin-bottom: 24px;
+  }
+  .cb-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--font-body);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--cb-ink-soft);
+    margin: 0 0 10px;
+  }
+  .cb-eyebrow::after {
+    content: "→";
+    font-size: 13px;
+  }
+  .masthead h1 {
+    font-family: var(--font-body);
+    font-size: clamp(26px, 3.2vw, 42px);
+    font-weight: 800;
+    line-height: 1.05;
+    letter-spacing: -0.035em;
+    color: var(--cb-ink);
+    margin: 0 0 12px;
+  }
+  .masthead .sub {
+    font-family: var(--font-body);
+    font-size: 14.5px;
+    color: var(--cb-ink-soft);
+    max-width: 880px;
+    line-height: 1.6;
+  }
+  .masthead .sub code {
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    background: var(--cb-surface);
+    border: 1px solid var(--cb-border);
+    padding: 2px 6px;
+    border-radius: var(--radius-sm);
+    color: var(--cb-ink);
+  }
+
+  /* Info Note / Callout with #EF5E58 left border */
+  .note {
+    background: var(--cb-white);
+    border: 1px solid var(--cb-border);
+    border-left: 4px solid #EF5E58;
+    border-radius: var(--radius-md);
+    padding: 14px 18px;
+    font-size: 12.5px;
+    color: var(--cb-ink-soft);
+    line-height: 1.6;
+    margin-bottom: 24px;
+    box-shadow: var(--shadow-sm);
+  }
+  .note b { color: var(--cb-ink); font-weight: 700; }
+  .note.warn {
+    background: var(--amber-soft);
+    border-color: #e5cb9b;
+    border-left-color: var(--amber);
+    color: #633b0e;
+  }
+  .note.warn b { color: var(--amber); }
+
+  /* Toolbar & Max pages */
+  .toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 18px;
+    flex-wrap: wrap;
+  }
+  .pages-field {
+    border-radius: var(--radius-pill);
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    border: 1px solid var(--cb-border);
+    background: var(--cb-white);
+    padding: 6px 14px 6px 16px;
+    box-shadow: var(--shadow-sm);
+  }
+  .pages-field span {
+    font-family: var(--font-body);
+    font-size: 11.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--cb-ink-soft);
+    white-space: nowrap;
+  }
+  .pages-field input {
+    border-radius: var(--radius-sm);
+    font-family: var(--font-mono);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--cb-ink);
+    width: 68px;
+    text-align: center;
+    padding: 5px 4px;
+    border: 1px solid var(--cb-border);
+    background: var(--cb-canvas);
+    transition: border-color 0.15s ease, outline 0.15s ease;
+  }
+  .pages-field input:focus {
+    outline: 2px solid var(--cb-ink);
+    outline-offset: -1px;
+    background: #fff;
+  }
+  .pages-field input.invalid {
+    border-color: var(--red);
+    outline: 2px solid var(--red);
+  }
+
+  /* Metric KPI Dashboard - strictly horizontal row */
+  .dash {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    align-items: stretch !important;
+    width: 100% !important;
+    background: var(--panel) !important;
+    border: 1px solid var(--line-strong) !important;
+    border-radius: var(--radius-md) !important;
+    overflow: hidden !important;
+    margin-bottom: 22px !important;
+    box-shadow: var(--shadow-sm);
+  }
+  .dash .stat {
+    flex: 1 1 0 !important;
+    min-width: 0 !important;
+    padding: 14px 16px !important;
+    border-right: 1px solid var(--line) !important;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  .dash .stat .num {
+    font-family: var(--font-body);
+    font-size: 28px;
+    font-weight: 800;
+    line-height: 1;
+    color: var(--cb-ink);
+    letter-spacing: -0.04em;
+  }
+  .dash .stat .lbl {
+    font-family: var(--font-body);
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--cb-muted);
+    margin-top: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .dash .stat.green .num { color: var(--green); }
+  .dash .stat.red .num { color: var(--red); }
+  .dash .stat.amber .num { color: var(--amber); }
+
+  .dash .action {
+    flex: 0 0 auto !important;
+    display: flex !important;
+    align-items: center !important;
+    padding: 10px 14px !important;
+    background: transparent !important;
+    border-left: 1px solid var(--line) !important;
+  }
+
+  /* Buttons */
+  button.primary {
+    transition: transform 0.18s var(--ease), background 0.18s var(--ease), box-shadow 0.18s ease;
+    border-radius: var(--radius-pill);
+    font-family: var(--font-body);
+    font-weight: 700;
+    font-size: 12.5px;
+    letter-spacing: 0.03em;
+    color: #ffffff;
+    background: #0085B2;
+    border: 1px solid transparent;
+    padding: 9px 18px;
+    cursor: pointer;
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+  button.primary:hover:not(:disabled) {
+    background: #006b90;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 133, 178, 0.35);
+  }
+  button.primary:disabled {
+    background: #e2dfd5;
+    color: #8c877a;
+    border: 1px solid #d8d6cf;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
+
+  .report-links {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    align-items: center;
+  }
+  .report-link {
+    border-radius: var(--radius-pill);
+    font-family: var(--font-body);
+    font-weight: 700;
+    font-size: 11.5px;
+    color: var(--cb-ink);
+    background: var(--cb-white);
+    text-decoration: none;
+    border: 1px solid var(--cb-border);
+    padding: 7px 15px;
+    white-space: nowrap;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    transition: all 0.15s ease;
+    box-shadow: var(--shadow-sm);
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .report-link:hover:not(.disabled) {
+    background: var(--cb-ink);
+    color: var(--cb-white);
+    border-color: var(--cb-ink);
+  }
+  .report-link.disabled {
+    color: var(--cb-muted);
+    border-color: var(--cb-border);
+    background: transparent;
+    pointer-events: none;
+    opacity: 0.55;
+    box-shadow: none;
+  }
+
+  /* Panels Grid */
+  .panels {
+    box-shadow: var(--shadow-sm);
+    border-radius: var(--radius-md);
+    display: grid;
+    grid-template-columns: 1fr 32px 1fr;
+    border: 1px solid var(--cb-border);
+    background: var(--cb-white);
+    margin-bottom: 28px;
+    overflow: hidden;
+  }
+  .panel {
+    padding: 22px 24px;
+    display: flex;
+    flex-direction: column;
+  }
+  .panel-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+  /* Benchmark & Candidate Tags */
+  .panel-head .tag {
+    font-family: var(--font-body);
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    padding: 3px 9px;
+    border-radius: var(--radius-sm);
+    background: #e3e1d6;
+    color: #151515;
+  }
+  .panel-head .tag.candidate-tag {
+    background: #F6B565;
+    color: #000000;
+  }
+
+  .mode-toggle {
+    border-radius: var(--radius-pill);
+    display: inline-flex;
+    margin-bottom: 12px;
+    border: 1px solid var(--cb-border);
+    background: var(--cb-surface);
+    padding: 2px;
+    width: fit-content;
+  }
+  .mode-toggle button {
+    font-family: var(--font-body);
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--cb-ink-soft);
+    background: transparent;
+    border: none;
+    padding: 5px 12px;
+    border-radius: var(--radius-pill);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .mode-toggle button.active {
+    background: var(--cb-ink);
+    color: var(--cb-white);
+  }
+  .mode-toggle button:hover:not(.active) {
+    color: var(--cb-ink);
+    background: rgba(0,0,0,0.05);
+  }
+
+  .inputrow { display: flex; gap: 8px; margin-bottom: 10px; }
+  input[type=text] {
+    border-radius: var(--radius-sm);
+    flex: 1;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    padding: 10px 12px;
+    border: 1px solid var(--cb-border);
+    background: var(--cb-canvas);
+    color: var(--cb-ink);
+    transition: border-color 0.15s ease, background 0.15s ease;
+  }
+  input[type=text]:focus {
+    outline: 2px solid var(--cb-ink);
+    outline-offset: -1px;
+    background: #fff;
+  }
+
+  .url-list-wrap { margin-bottom: 10px; }
+  .url-list-wrap textarea {
+    border-radius: var(--radius-sm);
+    width: 100%;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    padding: 10px 12px;
+    border: 1px solid var(--cb-border);
+    background: var(--cb-canvas);
+    color: var(--cb-ink);
+    resize: vertical;
+    min-height: 86px;
+    line-height: 1.5;
+  }
+  .url-list-wrap textarea:focus {
+    outline: 2px solid var(--cb-ink);
+    outline-offset: -1px;
+    background: #fff;
+  }
+  .url-list-wrap .file-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 6px;
+    font-family: var(--font-body);
+    font-size: 11.5px;
+    color: var(--cb-muted);
+  }
+  .url-list-wrap input[type=file] { font-family: var(--font-body); font-size: 11.5px; }
+
+  .history-select-wrap { margin-bottom: 10px; }
+  .history-select-wrap select {
+    border-radius: var(--radius-sm);
+    width: 100%;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    padding: 9px 12px;
+    border: 1px solid var(--cb-border);
+    background: var(--cb-canvas);
+    color: var(--cb-ink);
+  }
+  .history-select-wrap select:focus {
+    outline: 2px solid var(--cb-ink);
+    outline-offset: -1px;
+  }
+
+  .progress-track {
+    height: 4px;
+    background: var(--cb-surface);
+    margin-bottom: 10px;
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    width: 0%;
+    background: var(--cb-ink);
+    transition: width 0.25s ease;
+  }
+  .progress-fill.done { background: var(--green); }
+  .progress-fill.err { background: var(--red); }
+
+  .status-line {
+    font-size: 12px;
+    color: var(--cb-muted);
+    min-height: 18px;
+    margin-bottom: 12px;
+    font-family: var(--font-mono);
+  }
+  .status-line.err { color: var(--red); }
+  .status-line.ok { color: var(--green); }
+
+  .divider {
+    position: relative;
+    background: var(--cb-surface);
+    border-left: 1px solid var(--cb-border);
+    border-right: 1px solid var(--cb-border);
+  }
+  .divider .node {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--cb-white);
+    border: 1px solid var(--cb-border);
+    box-shadow: var(--shadow-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-mono);
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--cb-ink);
+  }
+
+  .scrollbox {
+    max-height: 340px;
+    overflow-y: auto;
+    border: 1px solid var(--cb-border);
+    border-radius: var(--radius-sm);
+    background: var(--cb-canvas);
+  }
+  .scrollbox::-webkit-scrollbar { width: 8px; }
+  .scrollbox::-webkit-scrollbar-track { background: var(--cb-surface); }
+  .scrollbox::-webkit-scrollbar-thumb { background: var(--cb-border-strong); border-radius: 4px; }
+  .scrollbox::-webkit-scrollbar-thumb:hover { background: var(--cb-muted); }
+
+  table { width: 100%; border-collapse: collapse; }
+  thead th {
+    text-align: left;
+    font-family: var(--font-body);
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--cb-ink-soft);
+    font-weight: 700;
+    padding: 9px 10px;
+    border-bottom: 1px solid var(--cb-border);
+    position: sticky;
+    top: 0;
+    background: var(--cb-white);
+    z-index: 2;
+  }
+  tbody td {
+    padding: 9px 10px;
+    border-bottom: 1px solid var(--cb-border);
+    vertical-align: top;
+    font-size: 12.5px;
+  }
+  tbody tr:hover { background: rgba(0, 133, 178, 0.08); }
+  .idx { font-family: var(--font-mono); color: var(--cb-muted); width: 32px; }
+  .ptitle { font-family: var(--font-body); font-weight: 600; color: var(--cb-ink); }
+  .ppath { font-family: var(--font-mono); font-size: 11.5px; color: var(--cb-muted); word-break: break-all; }
+  .empty {
+    padding: 32px 16px;
+    text-align: center;
+    color: var(--cb-muted);
+    font-size: 13px;
+  }
+  .row-unmatched td { background: #fffcf4; }
+  .row-missing td { background: var(--cb-surface); color: var(--cb-muted); }
+
+  /* AI Summary Section */
+  .ai-summary-wrap {
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--cb-border);
+    background: var(--cb-white);
+    margin-bottom: 24px;
+  }
+  .ai-summary-head {
+    font-family: var(--font-body);
+    font-size: 12px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--cb-ink);
+    padding: 12px 20px;
+    border-bottom: 1px solid var(--cb-border);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--cb-surface);
+  }
+  .ai-summary-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--cb-ink);
+    color: #F6B565;
+    font-size: 11px;
+    line-height: 1;
+  }
+  .ai-summary-body { padding: 0; }
+  .ai-summary-entry {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--cb-border);
+  }
+  .ai-summary-entry:last-child { border-bottom: none; }
+  .ai-summary-entry-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 8px;
+    flex-wrap: wrap;
+  }
+  .ai-summary-phase {
+    font-family: var(--font-body);
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--cb-ink-soft);
+  }
+  .ai-summary-time {
+    font-size: 11px;
+    color: var(--cb-muted);
+    font-family: var(--font-mono);
+  }
+  .ai-summary-html {
+    font-size: 13.5px;
+    line-height: 1.65;
+    color: var(--cb-ink);
+  }
+  .ai-summary-html p { margin: 0 0 8px; }
+  .ai-summary-html p:last-child { margin-bottom: 0; }
+  .ai-summary-html ul, .ai-summary-html ol { margin: 0 0 8px 20px; padding: 0; }
+  .ai-summary-html li { margin-bottom: 4px; }
+  .ai-summary-error { color: var(--red); font-size: 12.5px; font-weight: 500; }
+  .ai-summary-retry-btn {
+    font-family: var(--font-body);
+    font-weight: 700;
+    font-size: 11.5px;
+    color: var(--red);
+    background: transparent;
+    border: 1px solid var(--red);
+    border-radius: var(--radius-pill);
+    padding: 4px 12px;
+    cursor: pointer;
+    margin-top: 8px;
+  }
+  .ai-summary-retry-btn:hover:not(:disabled) {
+    background: var(--red);
+    color: #fff;
+  }
+  .ai-summary-status { font-family: var(--font-mono); font-size: 12px; color: var(--cb-muted); }
+  .spinner {
+    display: inline-block;
+    width: 13px;
+    height: 13px;
+    border: 2px solid var(--cb-border);
+    border-top-color: var(--cb-ink);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    vertical-align: middle;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Comparison Ledger */
+  .ledger-wrap {
+    box-shadow: var(--shadow-sm);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--cb-border);
+    background: var(--cb-white);
+    overflow: hidden;
+  }
+  .ledger-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 18px 24px;
+    border-bottom: 2px solid var(--cb-ink);
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .ledger-head h2 {
+    font-family: var(--font-body);
+    font-size: 18px;
+    margin: 0;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+  }
+  .legend {
+    display: flex;
+    gap: 16px;
+    font-size: 12px;
+    color: var(--cb-ink-soft);
+    flex-wrap: wrap;
+  }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .legend b { font-family: var(--font-mono); font-size: 14px; }
+  .legend .g b { color: var(--green); }
+  .legend .r b { color: var(--red); }
+  .legend .a b { color: var(--amber); }
+
+  .ledger-table { width: 100%; border-collapse: collapse; }
+  .ledger-table thead th {
+    text-align: left;
+    font-family: var(--font-body);
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--cb-ink-soft);
+    font-weight: 700;
+    padding: 11px 14px;
+    border-bottom: 1px solid var(--cb-border);
+    background: var(--cb-surface);
+  }
+  .ledger-table tbody td {
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--cb-border);
+    font-size: 13px;
+    vertical-align: top;
+  }
+  .col-details { width: 50px; text-align: center; }
+  .details-icon-btn {
+    border-radius: var(--radius-pill);
+    background: transparent;
+    border: 1px solid var(--cb-border);
+    cursor: pointer;
+    color: var(--cb-ink);
+    padding: 4px 8px;
+    line-height: 1;
+    transition: all 0.15s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .details-icon-btn:hover:not(:disabled) {
+    background: var(--cb-ink);
+    color: var(--cb-white);
+    border-color: var(--cb-ink);
+  }
+  .details-icon-btn:disabled { color: var(--cb-border); border-color: var(--cb-border); cursor: default; }
+
+  .pill {
+    font-family: var(--font-body);
+    border-radius: var(--radius-pill);
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 3px 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .row-green .pill { background: var(--green-soft); color: var(--green); }
+  .row-red .pill { background: var(--red-soft); color: var(--red); }
+  .row-amber .pill { background: var(--amber-soft); color: var(--amber); }
+
+  .detail { color: var(--cb-ink-soft); font-size: 12px; margin-top: 3px; line-height: 1.45; }
+  .brokenlist {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--red);
+    background: var(--red-soft);
+    padding: 6px 10px;
+    border-radius: var(--radius-sm);
+    margin-top: 6px;
+    line-height: 1.5;
+    word-break: break-all;
+  }
+  .assetdiff {
+    border-radius: var(--radius-sm);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    margin-top: 6px;
+    background: var(--cb-surface);
+    border: 1px solid var(--cb-border);
+    padding: 8px 10px;
+    word-break: break-all;
+    line-height: 1.5;
+    color: var(--cb-ink);
+  }
+  .assetdiff-label { font-family: var(--font-body); font-size: 11px; font-weight: 700; color: var(--cb-ink-soft); margin-bottom: 4px; text-transform: uppercase; }
+  .diffsnippet {
+    border-radius: var(--radius-sm);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    margin-top: 6px;
+    background: var(--cb-surface);
+    border: 1px solid var(--cb-border);
+    padding: 8px 10px;
+    word-break: break-all;
+    line-height: 1.5;
+  }
+  .diffsnippet div { margin-bottom: 4px; }
+  .diffsnippet div:last-child { margin-bottom: 0; }
+  .diff-tag {
+    border-radius: var(--radius-sm);
+    display: inline-block;
+    font-family: var(--font-body);
+    font-size: 9.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 2px 6px;
+    margin-right: 6px;
+  }
+  .diff-tag.bench { background: #e3e1d6; color: var(--cb-ink); }
+  .diff-tag.cand { background: var(--amber-soft); color: var(--amber); }
+
+  .path-cell { font-family: var(--font-mono); font-size: 12px; }
+  .path-cell a {
+    color: var(--cb-muted);
+    text-decoration: none;
+    font-size: 11px;
+    display: inline-block;
+    margin-top: 3px;
+    margin-right: 8px;
+    border-bottom: 1px dotted var(--cb-border-strong);
+  }
+  .path-cell a:hover { color: var(--cb-ink); text-decoration: none; border-bottom-color: var(--cb-ink); }
+
+  /* Modal Overlay with single synchronized vertical scrollbar */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(17, 17, 17, 0.72);
+    backdrop-filter: blur(4px);
+    z-index: 2000;
+    align-items: center;
+    justify-content: center;
+    padding: 32px 20px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+  .modal-overlay.open {
+    display: flex;
+    animation: modalFadeIn 0.2s var(--ease);
+  }
+  @keyframes modalFadeIn {
+    from { opacity: 0; transform: scale(0.98); }
+    to { opacity: 1; transform: scale(1); }
+  }
+
+  .modal-box {
+    border-radius: var(--radius-lg);
+    background: var(--cb-white);
+    border: 1px solid var(--cb-border);
+    max-width: 1200px;
+    width: 100%;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: var(--shadow-lg);
+    overflow: hidden;
+  }
+  .modal-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+    padding: 20px 28px;
+    background: var(--cb-white);
+    border-bottom: 2px solid var(--cb-ink);
+    flex-shrink: 0;
+  }
+  .modal-head h2 {
+    font-family: var(--font-body);
+    font-size: 20px;
+    margin: 0 0 4px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    color: var(--cb-ink);
+  }
+  .modal-head .modal-subtitle {
+    font-size: 12px;
+    font-family: var(--font-mono);
+    color: var(--cb-muted);
+    word-break: break-all;
+  }
+  .modal-close-btn {
+    border-radius: var(--radius-pill);
+    background: var(--cb-surface);
+    border: 1px solid var(--cb-border);
+    font-family: var(--font-body);
+    font-size: 12px;
+    font-weight: 700;
+    padding: 6px 14px;
+    cursor: pointer;
+    color: var(--cb-ink);
+    flex-shrink: 0;
+    transition: all 0.15s ease;
+  }
+  .modal-close-btn:hover {
+    background: var(--cb-ink);
+    color: var(--cb-white);
+    border-color: var(--cb-ink);
+  }
+
+  .modal-tabs {
+    display: flex;
+    gap: 0;
+    border-bottom: 1px solid var(--cb-border);
+    background: var(--cb-surface);
+    padding: 0 20px;
+    flex-shrink: 0;
+  }
+  .modal-tab-btn {
+    font-family: var(--font-body);
+    font-size: 12.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--cb-muted);
+    background: transparent;
+    border: none;
+    border-bottom: 3px solid transparent;
+    padding: 12px 20px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+  .modal-tab-btn.active {
+    color: var(--cb-ink);
+    border-bottom-color: var(--cb-ink);
+    background: var(--cb-white);
+  }
+  .modal-tab-btn:hover:not(.active) {
+    color: var(--cb-ink);
+  }
+
+  .modal-tab-panel {
+    display: none;
+    flex: 1 1 auto;
+    overflow-y: auto;
+    background: var(--cb-canvas);
+  }
+  .modal-tab-panel.active { display: block; }
+
+  /* Single synchronized vertical scrollbar on the modal diff and screenshot views */
+  .diff-columns,
+  .screenshot-columns {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+    min-height: 380px;
+    max-height: calc(90vh - 160px);
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+  .diff-pane {
+    overflow: visible;
+    border-right: 1px solid var(--cb-border);
+    background: var(--cb-white);
+  }
+  .diff-pane:last-child { border-right: none; }
+  .diff-pane-head {
+    position: sticky;
+    top: 0;
+    background: var(--cb-ink);
+    color: var(--cb-white);
+    font-family: var(--font-body);
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    padding: 8px 14px;
+    z-index: 5;
+  }
+  .diff-line {
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+    white-space: pre-wrap;
+    word-break: break-all;
+    padding: 3px 14px;
+    border-bottom: 1px solid #f0eee8;
+    line-height: 1.5;
+  }
+  .diff-line.diff-same { color: var(--cb-ink); }
+  .diff-line.diff-added { background: var(--green-soft); color: var(--green); }
+  .diff-line.diff-removed { background: var(--red-soft); color: var(--red); }
+  .diff-line.diff-blank { background: var(--cb-surface); opacity: 0.6; }
+  .diff-empty-msg {
+    padding: 48px 24px;
+    text-align: center;
+    color: var(--cb-muted);
+    font-size: 13.5px;
+  }
+  .diff-truncated-note {
+    padding: 10px 20px;
+    font-family: var(--font-body);
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--amber);
+    background: var(--amber-soft);
+    border-bottom: 1px solid var(--cb-border);
+  }
+
+  .screenshot-pane {
+    overflow: visible;
+    border-right: 1px solid var(--cb-border);
+    padding: 16px;
+    text-align: center;
+    background: var(--cb-surface);
+  }
+  .screenshot-pane:last-child { border-right: none; }
+  .screenshot-pane-head {
+    font-family: var(--font-body);
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--cb-ink-soft);
+    margin-bottom: 12px;
+  }
+  .screenshot-pane img {
+    max-width: 100%;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--cb-border);
+    box-shadow: var(--shadow-sm);
+    display: block;
+    margin: 0 auto;
+    background: #fff;
+  }
+  .screenshot-error {
+    padding: 36px 18px;
+    text-align: center;
+    color: var(--red);
+    font-size: 12.5px;
+  }
+
+  /* Custom Clean Scrollbars */
+  .diff-columns::-webkit-scrollbar,
+  .screenshot-columns::-webkit-scrollbar,
+  .modal-tab-panel::-webkit-scrollbar {
+    width: 8px;
+  }
+  .diff-columns::-webkit-scrollbar-track,
+  .screenshot-columns::-webkit-scrollbar-track,
+  .modal-tab-panel::-webkit-scrollbar-track {
+    background: var(--cb-surface);
+  }
+  .diff-columns::-webkit-scrollbar-thumb,
+  .screenshot-columns::-webkit-scrollbar-thumb,
+  .modal-tab-panel::-webkit-scrollbar-thumb {
+    background: var(--cb-border-strong);
+    border-radius: 4px;
+  }
+
+  /* Responsive layout tweaks */
+  @media (max-width: 1024px) {
+    .dash {
+      flex-wrap: wrap !important;
+    }
+    .dash .stat {
+      flex: 1 1 calc(33.333% - 1px) !important;
+    }
+    .dash .action {
+      flex: 1 1 50% !important;
+      justify-content: center;
+    }
+  }
+
+  @media (max-width: 900px) {
+    .panels { grid-template-columns: 1fr; }
+    .divider { height: 32px; border-left: none; border-right: none; border-top: 1px solid var(--cb-border); border-bottom: 1px solid var(--cb-border); }
+    .diff-columns, .screenshot-columns { grid-template-columns: 1fr; }
+    .diff-pane, .screenshot-pane { border-right: none; border-bottom: 1px solid var(--cb-border); }
+  }
+
+  @media (max-width: 640px) {
+    .dash .stat {
+      flex: 1 1 50% !important;
+    }
+    .dash .action {
+      flex: 1 1 100% !important;
+    }
+  }
+</style>
+</head>
+<body>
+<div class="site-wrap">
+<!-- Header -->
+<header class="cb-header">
+<div class="brand-badge">
+<div class="brand-logo-mark">CB</div>
+<div>
+<span class="brand-name">Content Bloom</span>
+<span class="brand-tag">Quality Engineering</span>
+</div>
+</div>
+<div class="toolbar" style="margin-bottom:0;">
+<nav aria-label="Primary navigation" class="nav">
+<a class="active" href="index.html"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="layers" aria-hidden="true" class="lucide lucide-layers"><path d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83z"></path><path d="M2 12a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 12"></path><path d="M2 17a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 17"></path></svg> Diff Inspector</a>
+<a href="analysis.html" class=""><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="activity" aria-hidden="true" class="lucide lucide-activity"><path d="M22 12h-2.48a2 2 0 0 0-1.93 1.46l-2.35 8.36a.25.25 0 0 1-.48 0L9.24 2.18a.25.25 0 0 0-.48 0l-2.35 8.36A2 2 0 0 1 4.49 12H2"></path></svg> Site Analysis</a>
+<a href="history.html" class=""><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="history" aria-hidden="true" class="lucide lucide-history"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path><path d="M12 7v5l4 2"></path></svg> History</a>
+</nav>
+<label class="pages-field">
+<span class="">Max Pages to Scan</span>
+<input id="maxPages" inputmode="numeric" type="text" value="500">
+</label>
+</div>
+</header>
+<!-- Masthead -->
+<div class="masthead">
+<p class="cb-eyebrow">Visual &amp; Structural Verification</p>
+<h1 class="">Site Diff Inspector</h1>
+<div class="sub">Crawls a benchmark site and candidate site with headless Chromium, matches pages by <code>path</code> (URL after the domain), then diffs rendered text content, static assets, and candidate link health. Comparison filters markup noise and scripts — focusing squarely on what readers actually experience.</div>
+</div>
+<div class="note" id="serverNote">
+    Rendering executes server-side via <b>Crawlee + Playwright</b> (evaluates full client-side JavaScript) and link status is validated with <b>Linkinator</b>. Crawling seeds from the site's sitemap first (falling back to recursive link discovery), capturing real comprehensive coverage. Prefer comparing targeted routes? Switch either panel to <b>Use a URL list</b> and paste or upload specific paths — pairing occurs by index order.
+  </div>
+<div class="note warn" id="listMismatchWarning" style="display:none;"></div>
+<!-- KPI Metrics Dashboard - horizontal single row -->
+<div class="dash">
+<div class="stat"><div class="num" id="statBench">0</div><div class="lbl"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="layers" aria-hidden="true" class="lucide lucide-layers"><path d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83z"></path><path d="M2 12a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 12"></path><path d="M2 17a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 17"></path></svg> Benchmark pages</div></div>
+<div class="stat"><div class="num" id="statCand">0</div><div class="lbl"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="file-check" aria-hidden="true" class="lucide lucide-file-check"><path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z"></path><path d="M14 2v5a1 1 0 0 0 1 1h5"></path><path d="m9 15 2 2 4-4"></path></svg> Candidate pages</div></div>
+<div class="stat"><div class="num" id="statMatched">0</div><div class="lbl"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="git-compare" aria-hidden="true" class="lucide lucide-git-compare"><circle cx="18" cy="18" r="3"></circle><circle cx="6" cy="6" r="3"></circle><path d="M13 6h3a2 2 0 0 1 2 2v7"></path><path d="M11 18H8a2 2 0 0 1-2-2V9"></path></svg> Matched by path</div></div>
+<div class="stat green"><div class="num" id="statGreen">–</div><div class="lbl"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="check-circle-2" aria-hidden="true" class="lucide lucide-check-circle-2"><circle cx="12" cy="12" r="10"></circle><path d="m16 9-5.5 5.5L8 12"></path></svg> Equal</div></div>
+<div class="stat red"><div class="num" id="statRed">–</div><div class="lbl"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="alert-circle" aria-hidden="true" class="lucide lucide-alert-circle"><circle cx="12" cy="12" r="10"></circle><line x1="12" x2="12" y1="8" y2="12"></line><line x1="12" x2="12.01" y1="16" y2="16"></line></svg> Content altered</div></div>
+<div class="stat amber"><div class="num" id="statAmber">–</div><div class="lbl"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="link-2" aria-hidden="true" class="lucide lucide-link-2"><path d="M9 17H7A5 5 0 0 1 7 7h2"></path><path d="M15 7h2a5 5 0 1 1 0 10h-2"></path><line x1="8" x2="16" y1="12" y2="12"></line></svg> Links differ</div></div>
+<div class="action">
+<button class="primary" disabled="" id="btnCrawl"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="search" aria-hidden="true" class="lucide lucide-search"><path d="m21 21-4.34-4.34"></path><circle cx="11" cy="11" r="8"></circle></svg> Crawl sites</button>
+</div>
+<div class="action">
+<button class="primary" disabled="" id="btnTest"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="play" aria-hidden="true" class="lucide lucide-play"><path d="M5 5a2 2 0 0 1 3.008-1.728l11.997 6.998a2 2 0 0 1 .003 3.458l-12 7A2 2 0 0 1 5 19z"></path></svg> Start testing</button>
+</div>
+</div>
+<!-- AI Summary -->
+<div class="ai-summary-wrap" id="aiSummaryWrap" style="display:none;">
+<div class="ai-summary-head"><span class="ai-summary-badge">✨</span> AI Executive Summary</div>
+<div class="ai-summary-body" id="aiSummaryBody"></div>
+</div>
+<!-- Reports -->
+<div class="report-links" id="crawlReportLinks">
+<a class="report-link disabled" href="/api/report/diff.csv" id="dlCsv"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="file-spreadsheet" aria-hidden="true" class="lucide lucide-file-spreadsheet"><path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z"></path><path d="M14 2v5a1 1 0 0 0 1 1h5"></path><path d="M8 13h2"></path><path d="M14 13h2"></path><path d="M8 17h2"></path><path d="M14 17h2"></path></svg> Download CSV</a>
+<a class="report-link disabled" href="/api/report/diff.pdf" id="dlPdf"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="file-text" aria-hidden="true" class="lucide lucide-file-text"><path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z"></path><path d="M14 2v5a1 1 0 0 0 1 1h5"></path><path d="M10 9H8"></path><path d="M16 13H8"></path><path d="M16 17H8"></path></svg> Download PDF</a>
+</div>
+<!-- Two-Column Crawler Panels -->
+<div class="panels">
+<div class="panel">
+<div class="panel-head">
+<span class="tag candidate-tag">Benchmark Site</span>
+</div>
+<div class="mode-toggle" id="benchModeToggle">
+<button class="active" data-mode="crawl" type="button"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="globe" aria-hidden="true" class="lucide lucide-globe"><circle cx="12" cy="12" r="10"></circle><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"></path><path d="M2 12h20"></path></svg> Crawl a site</button>
+<button data-mode="list" type="button" class=""><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="list" aria-hidden="true" class="lucide lucide-list"><path d="M3 5h.01"></path><path d="M3 12h.01"></path><path d="M3 19h.01"></path><path d="M8 5h13"></path><path d="M8 12h13"></path><path d="M8 19h13"></path></svg> Use a URL list</button>
+<button data-mode="history" type="button" class=""><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="archive" aria-hidden="true" class="lucide lucide-archive"><rect width="20" height="5" x="2" y="3" rx="1"></rect><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"></path><path d="M10 12h4"></path></svg> Load from history</button>
+</div>
+<div class="inputrow" id="benchCrawlInput">
+<input id="benchUrl" placeholder="https://benchmark-site.com" type="text">
+</div>
+<div class="url-list-wrap" id="benchListInput" style="display:none;">
+<textarea id="benchUrlList" placeholder="https://example.com/page-1
+https://example.com/page-2
+https://example.com/page-3" rows="4"></textarea>
+<div class="file-row">
+<input accept=".txt,.csv" id="benchUrlFile" type="file">
+<span class="">or paste above — one URL per line</span>
+</div>
+</div>
+<div class="history-select-wrap" id="benchHistoryInput" style="display:none;">
+<select id="benchHistorySelect"><option value="">Loading saved crawls…</option></select>
+</div>
+<div class="progress-track"><div class="progress-fill" id="benchBar"></div></div>
+<div class="status-line" id="benchStatus">Enter both URLs, then press Crawl sites.</div>
+<div class="scrollbox">
+<table>
+<thead><tr><th class="idx">#</th><th class="">Title</th><th class="">Path</th></tr></thead>
+<tbody id="benchBody"></tbody>
+</table>
+</div>
+</div>
+<div class="divider"><div class="node" id="dividerNode">·</div></div>
+<div class="panel">
+<div class="panel-head">
+<span class="tag candidate-tag">Candidate Site</span>
+</div>
+<div class="mode-toggle" id="candModeToggle">
+<button class="active" data-mode="crawl" type="button"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="globe" aria-hidden="true" class="lucide lucide-globe"><circle cx="12" cy="12" r="10"></circle><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"></path><path d="M2 12h20"></path></svg> Crawl a site</button>
+<button data-mode="list" type="button" class=""><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="list" aria-hidden="true" class="lucide lucide-list"><path d="M3 5h.01"></path><path d="M3 12h.01"></path><path d="M3 19h.01"></path><path d="M8 5h13"></path><path d="M8 12h13"></path><path d="M8 19h13"></path></svg> Use a URL list</button>
+<button data-mode="history" type="button" class=""><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="archive" aria-hidden="true" class="lucide lucide-archive"><rect width="20" height="5" x="2" y="3" rx="1"></rect><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"></path><path d="M10 12h4"></path></svg> Load from history</button>
+</div>
+<div class="inputrow" id="candCrawlInput">
+<input id="candUrl" placeholder="https://candidate-site.com" type="text">
+</div>
+<div class="url-list-wrap" id="candListInput" style="display:none;">
+<textarea id="candUrlList" placeholder="https://example.com/page-1
+https://example.com/page-2
+https://example.com/page-3" rows="4"></textarea>
+<div class="file-row">
+<input accept=".txt,.csv" id="candUrlFile" type="file">
+<span class="">or paste above — one URL per line</span>
+</div>
+</div>
+<div class="history-select-wrap" id="candHistoryInput" style="display:none;">
+<select id="candHistorySelect"><option value="">Loading saved crawls…</option></select>
+</div>
+<div class="progress-track"><div class="progress-fill" id="candBar"></div></div>
+<div class="status-line" id="candStatus">Enter both URLs, then press Crawl sites.</div>
+<div class="scrollbox">
+<table>
+<thead><tr><th class="idx">#</th><th class="">Title</th><th class="">Path</th></tr></thead>
+<tbody id="candBody"></tbody>
+</table>
+</div>
+</div>
+</div>
+<!-- Comparison Ledger -->
+<div class="ledger-wrap" id="ledgerWrap">
+<div class="ledger-head">
+<h2 class="">Comparison Ledger</h2>
+<div class="legend">
+<span class="g"><b>=</b> same visible content &amp; links</span>
+<span class="r"><b>≠</b> content changed / unreachable</span>
+<span class="a"><b>≠</b> links or assets differ</span>
+</div>
+</div>
+<div style="padding:14px 24px 0;">
+<div class="progress-track" style="margin-bottom:0;"><div class="progress-fill" id="testBar"></div></div>
+<div class="status-line" id="testProgress" style="display:none;margin:8px 0 0;"></div>
+</div>
+<table class="ledger-table">
+<thead>
+<tr><th class="idx">#</th><th class="">Title</th><th class="">Path</th><th class="">Status</th><th class="">Detail</th><th class="col-details"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="info" aria-hidden="true" class="lucide lucide-info"><circle cx="12" cy="12" r="10"></circle><path d="M12 16v-4"></path><path d="M12 8h.01"></path></svg></th></tr>
+</thead>
+<tbody id="ledgerBody">
+<tr><td colspan="6" class=""><div class="empty">Crawl both sites, then press Start testing (enabled once both finish).</div></td></tr>
+</tbody>
+</table>
+</div>
+</div>
+<!-- Modal Overlay for Page Diff & Layout Screenshots -->
+<div class="modal-overlay" id="testDetailsModalOverlay">
+<div aria-labelledby="testDetailsModalTitle" aria-modal="true" class="modal-box" role="dialog">
+<div class="modal-head">
+<div>
+<h2 id="testDetailsModalTitle" class="">Page Details</h2>
+<div class="modal-subtitle" id="testDetailsModalPath"></div>
+</div>
+<button class="modal-close-btn" id="testDetailsModalCloseBtn" type="button">× Close</button>
+</div>
+<div class="modal-tabs">
+<button class="modal-tab-btn active" data-tab="source" type="button">Source Diff</button>
+<button class="modal-tab-btn" data-tab="layout" type="button">Visual Layout</button>
+</div>
+<div class="modal-tab-panel active" id="testDetailsSourceTab">
+<div id="testDetailsSourceBody"></div>
+</div>
+<div class="modal-tab-panel" id="testDetailsLayoutTab">
+<div id="testDetailsLayoutBody"></div>
+</div>
+</div>
+</div>
+<script>
+(function(){
+  "use strict";
+
+  const state = {
+    bench: { pages: [], mode: "crawl", invalidCount: 0 },
+    cand:  { pages: [], mode: "crawl", invalidCount: 0 },
+    results: []
+  };
+
+  const $ = id => document.getElementById(id);
+
+  function refreshIcons(){
+    if(window.lucide && typeof window.lucide.createIcons === "function"){
+      window.lucide.createIcons();
+    }
+  }
+
+  function escapeHtml(s){
+    return String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+  }
+
+  function parseUrlListText(text){
+    const lines = String(text || "").split(/\r?\n/);
+    const urls = [];
+    for(const line of lines){
+      const trimmed = line.trim();
+      if(!trimmed || trimmed.startsWith("#")) continue;
+      trimmed.split(",").map(p => p.trim()).filter(Boolean).forEach(p => {
+        if(/^https?:\/\//i.test(p) || /^[a-z0-9.-]+\.[a-z]{2,}(\/|$|\?)/i.test(p)) urls.push(p);
+      });
+    }
+    return Array.from(new Set(urls));
+  }
+
+  function pathFromUrl(urlStr){
+    try{
+      const u = new URL(/^https?:\/\//i.test(urlStr) ? urlStr : `https://${urlStr}`);
+      let p = u.pathname;
+      if(p.length > 1 && p.endsWith("/")) p = p.slice(0, -1);
+      if(p === "") p = "/";
+      return p + u.search;
+    }catch(e){ return urlStr; }
+  }
+
+  function previewListMode(slot){
+    if(state[slot].mode !== "list") return;
+    const urls = parseUrlListText($(`${slot}UrlList`).value);
+    state[slot].pages = urls.map(u => ({ title: "(not yet rendered)", url: u, path: pathFromUrl(u) }));
+    state[slot].invalidCount = 0;
+    renderPanel(slot);
+    updateDashboard();
+    updateListMismatchWarning();
+  }
+
+  function setMode(mode){
+    ["bench", "cand"].forEach(slot => {
+      state[slot].mode = mode;
+      const toggle = $(`${slot}ModeToggle`);
+      toggle.querySelectorAll("button").forEach(b => b.classList.toggle("active", b.getAttribute("data-mode") === mode));
+      $(`${slot}CrawlInput`).style.display = mode === "crawl" ? "" : "none";
+      $(`${slot}ListInput`).style.display = mode === "list" ? "" : "none";
+      $(`${slot}HistoryInput`).style.display = mode === "history" ? "" : "none";
+      if(mode === "list"){
+        previewListMode(slot);
+      }else if(mode === "history"){
+        loadHistoryOptions(slot);
+        state[slot].pages = [];
+        renderPanel(slot);
+      }else{
+        state[slot].pages = [];
+        renderPanel(slot);
+      }
+    });
+    updateDashboard();
+    updateListMismatchWarning();
+    $("btnCrawl").disabled = mode !== "crawl";
+    $("btnCrawl").title = mode !== "crawl" ? "Not needed in this mode — press Start testing directly." : "";
+    updateCrawlButtonState();
+    refreshIcons();
+  }
+
+  function setupModeToggle(slot){
+    const toggle = $(`${slot}ModeToggle`);
+    toggle.querySelectorAll("button").forEach(btn => {
+      btn.addEventListener("click", () => setMode(btn.getAttribute("data-mode")));
+    });
+  }
+
+  async function loadHistoryOptions(slot){
+    const select = $(`${slot}HistorySelect`);
+    select.innerHTML = `<option value="">Loading saved crawls…</option>`;
+    try{
+      const result = await api("/api/history/pagesets");
+      const opts = result.options || [];
+      if(opts.length === 0){
+        select.innerHTML = `<option value="">No saved crawls yet</option>`;
+        return;
+      }
+      select.innerHTML = `<option value="">Select a saved crawl…</option>` +
+        opts.map(o => `<option value="${escapeHtml(o.key)}">${escapeHtml(o.label)}</option>`).join("");
+    }catch(e){
+      select.innerHTML = `<option value="">Failed to load saved crawls</option>`;
+    }
+  }
+
+  function setupHistorySelect(slot){
+    const select = $(`${slot}HistorySelect`);
+    select.addEventListener("change", async () => {
+      updateCrawlButtonState();
+      if(!select.value) return;
+      await crawlOne(slot, `${slot}Url`, `${slot}Status`);
+      updateDashboard();
+      if(state.bench.pages.length || state.cand.pages.length) alignPanels();
+      updateCrawlButtonState();
+    });
+  }
+
+  function setupFileUpload(slot){
+    const fileInput = $(`${slot}UrlFile`);
+    const textarea = $(`${slot}UrlList`);
+    fileInput.addEventListener("change", () => {
+      const file = fileInput.files[0];
+      if(!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        const parsed = parseUrlListText(String(reader.result || ""));
+        const existing = textarea.value.trim();
+        textarea.value = existing ? existing + "\n" + parsed.join("\n") : parsed.join("\n");
+        fileInput.value = "";
+        updateCrawlButtonState();
+        previewListMode(slot);
+      };
+      reader.onerror = () => alert("Failed to read that file.");
+      reader.readAsText(file);
+    });
+  }
+
+  async function api(path, opts){
+    const res = await fetch(path, Object.assign({ headers: { "Content-Type": "application/json" } }, opts));
+    let body;
+    try { body = await res.json(); } catch(e){ body = { ok:false, error:"Server returned a non-JSON response." }; }
+    if(!res.ok || body.ok === false){
+      const err = new Error(body.error || `Request failed (HTTP ${res.status})`);
+      err.partialPages = body.partialPages;
+      err.partialResults = body.partialResults;
+      throw err;
+    }
+    return body;
+  }
+
+  let aiPollTimer = null;
+
+  function renderAiSummary(result){
+    const wrap = $("aiSummaryWrap");
+    const body = $("aiSummaryBody");
+    const entries = Array.isArray(result.entries) ? result.entries : [];
+    if(result.status === "idle" && entries.length === 0){
+      wrap.style.display = "none";
+      return;
+    }
+    wrap.style.display = "block";
+
+    const entriesHtml = entries.map(e => {
+      const when = e.createdAt ? new Date(e.createdAt).toLocaleString() : "";
+      const html = e.html || `<p>${escapeHtml(e.text || "")}</p>`;
+      return `<div class="ai-summary-entry">
+        <div class="ai-summary-entry-head">
+          <span class="ai-summary-phase">${escapeHtml(e.reportType || "AI Summary")}</span>
+          ${when ? `<span class="ai-summary-time">${escapeHtml(when)}</span>` : ""}
+        </div>
+        <div class="ai-summary-html">${html}</div>
+      </div>`;
+    }).join("");
+
+    let statusHtml = "";
+    if(result.status === "generating"){
+      statusHtml = `<div class="ai-summary-entry"><span class="spinner"></span> <span class="ai-summary-status">Synthesizing executive AI summary…</span></div>`;
+    }else if(result.status === "error"){
+      statusHtml = `<div class="ai-summary-entry">
+        <div class="ai-summary-error">AI summary unavailable: ${escapeHtml(result.error || "unknown error")}</div>
+        ${result.canRetry ? `<button type="button" class="ai-summary-retry-btn" id="aiSummaryRetryBtn">Retry</button>` : ""}
+      </div>`;
+    }
+
+    body.innerHTML = entriesHtml + statusHtml || `<div class="ai-summary-entry"><span class="ai-summary-status">No summary generated yet.</span></div>`;
+
+    const retryBtn = $("aiSummaryRetryBtn");
+    if(retryBtn) retryBtn.addEventListener("click", retryAiSummary);
+    refreshIcons();
+  }
+
+  async function retryAiSummary(){
+    const btn = $("aiSummaryRetryBtn");
+    if(btn){ btn.disabled = true; btn.textContent = "Retrying…"; }
+    try{
+      await api("/api/ai-summary/diff/retry", { method: "POST", body: JSON.stringify({}) });
+    }catch(e){ }
+    pollAiSummary();
+  }
+
+  async function pollAiSummary(){
+    try{
+      const result = await api("/api/ai-summary/diff");
+      renderAiSummary(result);
+      if(result.status === "generating"){
+        if(!aiPollTimer) aiPollTimer = setInterval(pollAiSummary, 2500);
+      }else if(aiPollTimer){
+        clearInterval(aiPollTimer);
+        aiPollTimer = null;
+      }
+    }catch(e){ }
+  }
+
+  function pageRowHtml(idx, p){
+    return `
+      <tr>
+        <td class="idx">${idx}</td>
+        <td class="ptitle">${escapeHtml(p.title)}</td>
+        <td class="ppath"><a href="${escapeHtml(p.url)}" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline;">${escapeHtml(p.path)}</a></td>
+      </tr>`;
+  }
+
+  function renderPanel(slot){
+    const body = slot === "bench" ? $("benchBody") : $("candBody");
+    const pages = state[slot].pages;
+    body.innerHTML = pages.map((p,i)=>pageRowHtml(i+1,p)).join("") || `<tr><td colspan="3"><div class="empty">No pages indexed yet.</div></td></tr>`;
+    refreshIcons();
+  }
+
+  function pathMatchCell(p, matched, idx){
+    if(!p){
+      return `<tr class="row-missing"><td class="idx">${idx}</td><td colspan="2" style="color:var(--cb-muted);font-style:italic;">— not present on this target —</td></tr>`;
+    }
+    return `<tr class="${matched ? "row-matched" : "row-unmatched"}">
+      <td class="idx">${idx}</td>
+      <td class="ptitle">${escapeHtml(p.title)}</td>
+      <td class="ppath"><a href="${escapeHtml(p.url)}" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline;">${escapeHtml(p.path)}</a></td>
+    </tr>`;
+  }
+
+  function alignPanelsByPosition(){
+    const benchPages = state.bench.pages;
+    const candPages = state.cand.pages;
+    const maxLen = Math.max(benchPages.length, candPages.length);
+    const pairedLen = Math.min(benchPages.length, candPages.length);
+
+    const benchRows = [];
+    const candRows = [];
+    for(let i = 0; i < maxLen; i++){
+      const paired = i < pairedLen;
+      benchRows.push(pathMatchCell(benchPages[i], paired, i+1));
+      candRows.push(pathMatchCell(candPages[i], paired, i+1));
+    }
+
+    $("benchBody").innerHTML = benchRows.join("") || `<tr><td colspan="3"><div class="empty">No pages indexed yet.</div></td></tr>`;
+    $("candBody").innerHTML = candRows.join("") || `<tr><td colspan="3"><div class="empty">No pages indexed yet.</div></td></tr>`;
+    refreshIcons();
+  }
+
+  function alignPanels(){
+    if(state.bench.mode === "list"){
+      alignPanelsByPosition();
+      return;
+    }
+    const benchByPath = new Map(state.bench.pages.map(p=>[p.path,p]));
+    const candByPath = new Map(state.cand.pages.map(p=>[p.path,p]));
+    const allPaths = Array.from(new Set([...benchByPath.keys(), ...candByPath.keys()])).sort();
+
+    $("benchBody").innerHTML = allPaths.map((path,i)=>pathMatchCell(benchByPath.get(path), candByPath.has(path), i+1)).join("")
+      || `<tr><td colspan="3"><div class="empty">No pages indexed yet.</div></td></tr>`;
+    $("candBody").innerHTML = allPaths.map((path,i)=>pathMatchCell(candByPath.get(path), benchByPath.has(path), i+1)).join("")
+      || `<tr><td colspan="3"><div class="empty">No pages indexed yet.</div></td></tr>`;
+    refreshIcons();
+  }
+
+  function updateDashboard(){
+    $("statBench").textContent = state.bench.pages.length;
+    $("statCand").textContent = state.cand.pages.length;
+    let matched;
+    if(state.bench.mode === "list"){
+      matched = Math.min(state.bench.pages.length, state.cand.pages.length);
+    }else{
+      const candPaths = new Set(state.cand.pages.map(p=>p.path));
+      matched = state.bench.pages.filter(p=>candPaths.has(p.path)).length;
+    }
+    $("statMatched").textContent = matched;
+
+    const hasCrawled = state.bench.pages.length > 0 && state.cand.pages.length > 0;
+    $("dlCsv").classList.toggle("disabled", !hasCrawled);
+    $("dlPdf").classList.toggle("disabled", !hasCrawled);
+  }
+
+  function hasInput(slot){
+    const mode = state[slot].mode;
+    if(mode === "list") return $(`${slot}UrlList`).value.trim().length > 0;
+    if(mode === "history") return $(`${slot}HistorySelect`).value.length > 0;
+    return $(`${slot}Url`).value.trim().length > 0;
+  }
+
+  function updateCrawlButtonState(){
+    const mode = state.bench.mode;
+    const bothReady = hasInput("bench") && hasInput("cand");
+    if(mode === "list"){
+      $("btnCrawl").disabled = true;
+      $("btnTest").disabled = !bothReady || crawling;
+    }else if(mode === "history"){
+      $("btnCrawl").disabled = true;
+      $("btnTest").disabled = !(state.bench.pages.length > 0 && state.cand.pages.length > 0) || crawling;
+    }else{
+      $("btnCrawl").disabled = !bothReady || crawling;
+      $("btnTest").disabled = !(state.bench.pages.length > 0 && state.cand.pages.length > 0) || crawling;
+    }
+  }
+
+  function setBar(slot, pct, mode){
+    const bar = $(slot === "bench" ? "benchBar" : "candBar");
+    bar.style.width = Math.max(0, Math.min(100, pct)) + "%";
+    bar.className = "progress-fill" + (mode ? " " + mode : "");
+  }
+
+  async function pollProgress(slot, statusEl){
+    try{
+      const p = await api(`/api/progress/${slot}`);
+      if(Array.isArray(p.pages) && p.pages.length !== state[slot].pages.length){
+        state[slot].pages = p.pages;
+        renderPanel(slot);
+        updateDashboard();
+      }
+      if(p.total > 0){
+        const pct = p.status === "done" ? 100 : Math.min(99, Math.round((p.found / p.total) * 100));
+        setBar(slot, pct, p.status === "error" ? "err" : (p.status === "done" ? "done" : ""));
+        if(p.status === "running") statusEl.textContent = `Crawling — ${p.found} of ~${p.total} page(s) rendered…`;
+      } else if(p.status === "running"){
+        statusEl.textContent = "Parsing sitemap & discovering links…";
+      }
+      return p;
+    }catch(e){
+      return null;
+    }
+  }
+
+  async function crawlOne(slot, urlInputId, statusId){
+    const mode = state[slot].mode;
+    const statusEl = $(statusId);
+    setBar(slot, 0, "");
+    state[slot].pages = [];
+    renderPanel(slot);
+    statusEl.textContent = "Starting…";
+    statusEl.className = "status-line";
+
+    const maxPages = parseInt($("maxPages").value, 10) || 500;
+    let body;
+    if(mode === "list"){
+      const urls = parseUrlListText($(`${slot}UrlList`).value);
+      if(urls.length === 0){
+        statusEl.textContent = "Enter at least one URL in the list.";
+        statusEl.className = "status-line err";
+        return false;
+      }
+      body = { mode: "list", urls, maxPages };
+    }else if(mode === "history"){
+      const sel = $(`${slot}HistorySelect`).value;
+      if(!sel){
+        statusEl.textContent = "Select a saved crawl from the list.";
+        statusEl.className = "status-line err";
+        return false;
+      }
+      const [historyType, historyId, historySide] = sel.split(":");
+      body = { mode: "history", historyType, historyId, historySide: historySide || null, maxPages };
+    }else{
+      const url = $(urlInputId).value.trim();
+      if(!url){
+        statusEl.textContent = "Enter a URL first.";
+        statusEl.className = "status-line err";
+        return false;
+      }
+      body = { url, maxPages };
+    }
+
+    const crawlPromise = api(`/api/crawl/${slot}`, { method:"POST", body: JSON.stringify(body) });
+
+    const pollTimer = setInterval(() => pollProgress(slot, statusEl), 700);
+    try{
+      const result = await crawlPromise;
+      state[slot].pages = result.pages;
+      state[slot].invalidCount = result.invalidCount || 0;
+      renderPanel(slot);
+      updateDashboard();
+      setBar(slot, 100, "done");
+      const invalidNote = result.invalidCount ? ` (${result.invalidCount} invalid URL(s) skipped)` : "";
+      const verb = mode === "list" ? "loaded from the list" : "rendered and indexed";
+      statusEl.textContent = `Done — ${result.count} page(s) ${verb}.${invalidNote}`;
+      statusEl.className = "status-line ok";
+      return true;
+    }catch(e){
+      if(e.partialPages && e.partialPages.length){
+        state[slot].pages = e.partialPages;
+        renderPanel(slot);
+        updateDashboard();
+      }
+      setBar(slot, 100, "err");
+      const count = state[slot].pages.length;
+      statusEl.textContent = `Failed: ${e.message}${count ? ` — kept ${count} page(s) found before this happened.` : ""}`;
+      statusEl.className = "status-line err";
+      return false;
+    }finally{
+      clearInterval(pollTimer);
+    }
+  }
+
+  let crawling = false;
+
+  function updateListMismatchWarning(){
+    const el = $("listMismatchWarning");
+    if(state.bench.mode !== "list"){
+      el.style.display = "none";
+      return;
+    }
+    const benchLen = state.bench.pages.length;
+    const candLen = state.cand.pages.length;
+    if(benchLen === 0 && candLen === 0){
+      el.style.display = "none";
+      return;
+    }
+    if(benchLen === candLen){
+      el.style.display = "none";
+      return;
+    }
+    const diff = Math.abs(benchLen - candLen);
+    const longer = benchLen > candLen ? "benchmark" : "candidate";
+    const invalidParts = [];
+    if(state.bench.invalidCount) invalidParts.push(`${state.bench.invalidCount} invalid benchmark line(s) skipped`);
+    if(state.cand.invalidCount) invalidParts.push(`${state.cand.invalidCount} invalid candidate line(s) skipped`);
+    const invalidNote = invalidParts.length ? ` This may be because ${invalidParts.join(" and ")}.` : "";
+    el.innerHTML = `<b>List lengths don't match</b> — benchmark has ${benchLen} URL(s), candidate has ${candLen}. Pages are paired by position, so the last ${diff} URL(s) on the ${longer} side won't be paired with anything and will be skipped.${invalidNote}`;
+    el.style.display = "block";
+  }
+
+  async function crawlSites(){
+    if(crawling) return;
+    crawling = true;
+    $("btnCrawl").disabled = true;
+    $("btnTest").disabled = true;
+
+    state.results = [];
+    renderLedger();
+    closeTestDetailsModal();
+    $("statGreen").textContent = "–";
+    $("statRed").textContent = "–";
+    $("statAmber").textContent = "–";
+    $("dividerNode").textContent = "·";
+    $("dividerNode").style.color = "";
+    $("testProgress").style.display = "none";
+    setTestBar(0, "");
+    state.bench.pages = [];
+    state.cand.pages = [];
+    renderPanel("bench");
+    renderPanel("cand");
+    updateDashboard();
+    updateListMismatchWarning();
+
+    await crawlOne("bench", "benchUrl", "benchStatus");
+    await crawlOne("cand", "candUrl", "candStatus");
+
+    if(state.bench.pages.length || state.cand.pages.length){
+      alignPanels();
+    }
+    updateListMismatchWarning();
+
+    crawling = false;
+    updateCrawlButtonState();
+    pollAiSummary();
+  }
+
+  function renderLedger(){
+    const pillFor = s => s === "green" ? "Equal" : (s === "red" ? "Changed" : "Links Differ");
+    const arrowCellText = (a, b) => a === b
+      ? escapeHtml(a)
+      : `${escapeHtml(a)} <span style="color:var(--cb-muted);">&rarr;</span> ${escapeHtml(b)}`;
+
+    $("ledgerBody").innerHTML = state.results.map((r,i)=>`
+      <tr class="row-${r.status}">
+        <td class="idx">${i+1}</td>
+        <td class="ptitle">${arrowCellText(r.benchTitle || "(untitled)", r.candTitle || "(untitled)")}</td>
+        <td class="path-cell">
+          ${arrowCellText(r.benchPath, r.candPath)}
+          <br>
+          <a href="${escapeHtml(r.benchUrl)}" target="_blank" rel="noopener">benchmark ↗</a>
+          <a href="${escapeHtml(r.candUrl)}" target="_blank" rel="noopener">candidate ↗</a>
+        </td>
+        <td><span class="pill">${pillFor(r.status)}</span></td>
+        <td>
+          <div class="detail">${escapeHtml(r.detail)}</div>
+          ${r.broken && r.broken.length ? `<div class="brokenlist">${r.broken.map(escapeHtml).join("<br>")}</div>` : ""}
+          ${r.diffSnippet ? `<div class="diffsnippet">
+            <div><span class="diff-tag bench">bench</span>${escapeHtml(r.diffSnippet.benchSnippet)}</div>
+            <div><span class="diff-tag cand">cand</span>${escapeHtml(r.diffSnippet.candSnippet)}</div>
+          </div>` : ""}
+          ${r.assetDiff ? `<div class="assetdiff">
+            <div class="assetdiff-label">Static assets (CSS/JS) differ:</div>
+            ${(r.assetDiff.onlyInBench||[]).map(a => `<div>&minus; ${escapeHtml(a)}</div>`).join("")}
+            ${(r.assetDiff.onlyInCand||[]).map(a => `<div>+ ${escapeHtml(a)}</div>`).join("")}
+          </div>` : ""}
+        </td>
+        <td class="col-details"><button type="button" class="details-icon-btn" data-details-index="${i}" title="View source diff and layout comparison"><i data-lucide="info"></i></button></td>
+      </tr>
+    `).join("") || `<tr><td colspan="6"><div class="empty">No matching paths between the two sites — nothing to compare yet.</div></td></tr>`;
+
+    const counts = { green:0, red:0, amber:0 };
+    state.results.forEach(r => counts[r.status]++);
+    $("statGreen").textContent = counts.green;
+    $("statRed").textContent = counts.red;
+    $("statAmber").textContent = counts.amber;
+    $("dividerNode").textContent = counts.red > 0 ? "≠" : (counts.amber > 0 ? "≠" : "=");
+    $("dividerNode").style.color = counts.red > 0 ? "var(--red)" : (counts.amber > 0 ? "var(--amber)" : "var(--green)");
+
+    refreshIcons();
+  }
+
+  function setTestBar(pct, mode){
+    const bar = $("testBar");
+    bar.style.width = Math.max(0, Math.min(100, pct)) + "%";
+    bar.className = "progress-fill" + (mode ? " " + mode : "");
+  }
+
+  async function pollTestProgress(){
+    try{
+      const p = await api("/api/test/progress");
+      if(Array.isArray(p.results) && p.results.length !== state.results.length){
+        state.results = p.results;
+        renderLedger();
+      }
+      if(p.total > 0){
+        const pct = p.status === "done" ? 100 : Math.min(99, Math.round((p.done / p.total) * 100));
+        setTestBar(pct, p.status === "error" ? "err" : (p.status === "done" ? "done" : ""));
+        if(p.status === "running") $("testProgress").textContent = `Testing — ${p.done} of ${p.total} matched page(s)…`;
+      }
+      return p;
+    }catch(e){
+      return null;
+    }
+  }
+
+  let testDetailsIndex = null;
+  let testDetailsPollTimer = null;
+
+  function diffLineHtml(row){
+    if(row.type === "same"){
+      return {
+        left: `<div class="diff-line diff-same">${escapeHtml(row.left)}</div>`,
+        right: `<div class="diff-line diff-same">${escapeHtml(row.right)}</div>`,
+      };
+    }
+    if(row.type === "removed"){
+      return {
+        left: `<div class="diff-line diff-removed">${escapeHtml(row.left)}</div>`,
+        right: `<div class="diff-line diff-blank">&nbsp;</div>`,
+      };
+    }
+    return {
+      left: `<div class="diff-line diff-blank">&nbsp;</div>`,
+      right: `<div class="diff-line diff-added">${escapeHtml(row.right)}</div>`,
+    };
+  }
+
+  function renderTestDetailsBodies(result){
+    const sourceEl = $("testDetailsSourceBody");
+    const layoutEl = $("testDetailsLayoutBody");
+
+    if(!result || result.status === "idle"){
+      sourceEl.innerHTML = `<div class="diff-empty-msg">Not requested yet.</div>`;
+      layoutEl.innerHTML = `<div class="diff-empty-msg">Not requested yet.</div>`;
+      return;
+    }
+    if(result.status === "generating"){
+      const loading = `<div class="diff-empty-msg"><span class="spinner"></span> Loading page source comparison and visual screenshots…</div>`;
+      sourceEl.innerHTML = loading;
+      layoutEl.innerHTML = loading;
+      return;
+    }
+    if(result.status === "error"){
+      const errHtml = `<div class="diff-empty-msg">
+        <div class="ai-summary-error">Could not load page details: ${escapeHtml(result.error || "unknown error")}</div>
+        <button type="button" class="ai-summary-retry-btn test-details-retry-btn">Retry</button>
+      </div>`;
+      sourceEl.innerHTML = errHtml;
+      layoutEl.innerHTML = errHtml;
+      document.querySelectorAll(".test-details-retry-btn").forEach(b => {
+        b.addEventListener("click", () => requestTestPageDetails(testDetailsIndex));
+      });
+      return;
+    }
+
+    if(result.identical){
+      sourceEl.innerHTML = `<div class="diff-empty-msg">Pages are identical — no differences detected in visible rendered source.</div>`;
+    }else{
+      const truncatedNote = result.truncated
+        ? `<div class="diff-truncated-note">Page content exceeded buffer threshold — displaying the first portion of differences.</div>`
+        : "";
+      const leftLines = [];
+      const rightLines = [];
+      (result.diffRows || []).forEach(row => {
+        const h = diffLineHtml(row);
+        leftLines.push(h.left);
+        rightLines.push(h.right);
+      });
+      sourceEl.innerHTML = `${truncatedNote}<div class="diff-columns">
+        <div class="diff-pane"><div class="diff-pane-head">Benchmark Page</div>${leftLines.join("")}</div>
+        <div class="diff-pane"><div class="diff-pane-head">Candidate Page</div>${rightLines.join("")}</div>
+      </div>`;
+    }
+
+    const benchImg = result.benchScreenshot
+      ? `<img src="${result.benchScreenshot}" alt="Benchmark page screenshot">`
+      : `<div class="screenshot-error">${escapeHtml(result.benchError || "Screenshot unavailable")}</div>`;
+    const candImg = result.candScreenshot
+      ? `<img src="${result.candScreenshot}" alt="Candidate page screenshot">`
+      : `<div class="screenshot-error">${escapeHtml(result.candError || "Screenshot unavailable")}</div>`;
+    layoutEl.innerHTML = `<div class="screenshot-columns">
+      <div class="screenshot-pane"><div class="screenshot-pane-head">Benchmark Layout</div>${benchImg}</div>
+      <div class="screenshot-pane"><div class="screenshot-pane-head">Candidate Layout</div>${candImg}</div>
+    </div>`;
+
+    refreshIcons();
+  }
+
+  async function pollTestPageDetails(index){
+    try{
+      const result = await api(`/api/test/page-details?index=${encodeURIComponent(index)}`);
+      if(testDetailsIndex !== index) return;
+      renderTestDetailsBodies(result);
+      if(result.status === "generating"){
+        if(!testDetailsPollTimer) testDetailsPollTimer = setInterval(() => pollTestPageDetails(index), 1500);
+      }else if(testDetailsPollTimer){
+        clearInterval(testDetailsPollTimer);
+        testDetailsPollTimer = null;
+      }
+    }catch(e){ }
+  }
+
+  async function requestTestPageDetails(index){
+    renderTestDetailsBodies({ status: "generating" });
+    try{
+      await api("/api/test/page-details", { method: "POST", body: JSON.stringify({ index }) });
+    }catch(e){ }
+    pollTestPageDetails(index);
+  }
+
+  function switchTestDetailsTab(tab){
+    document.querySelectorAll(".modal-tab-btn").forEach(b => b.classList.toggle("active", b.getAttribute("data-tab") === tab));
+    $("testDetailsSourceTab").classList.toggle("active", tab === "source");
+    $("testDetailsLayoutTab").classList.toggle("active", tab === "layout");
+  }
+
+  function openTestDetailsModal(index){
+    const r = state.results[index];
+    if(!r) return;
+    testDetailsIndex = index;
+    const titleText = r.benchTitle === r.candTitle ? (r.benchTitle || "(untitled)") : `${r.benchTitle || "(untitled)"} → ${r.candTitle || "(untitled)"}`;
+    $("testDetailsModalTitle").textContent = titleText;
+    $("testDetailsModalPath").textContent = r.benchPath === r.candPath ? r.benchPath : `${r.benchPath} → ${r.candPath}`;
+    switchTestDetailsTab("source");
+    $("testDetailsModalOverlay").classList.add("open");
+    document.body.style.overflow = "hidden";
+    requestTestPageDetails(index);
+  }
+
+  function closeTestDetailsModal(){
+    testDetailsIndex = null;
+    $("testDetailsModalOverlay").classList.remove("open");
+    document.body.style.overflow = "";
+    if(testDetailsPollTimer){ clearInterval(testDetailsPollTimer); testDetailsPollTimer = null; }
+  }
+
+  $("ledgerBody").addEventListener("click", (e) => {
+    const btn = e.target.closest(".details-icon-btn[data-details-index]");
+    if(!btn) return;
+    openTestDetailsModal(Number(btn.getAttribute("data-details-index")));
+  });
+  $("testDetailsModalCloseBtn").addEventListener("click", closeTestDetailsModal);
+  $("testDetailsModalOverlay").addEventListener("click", (e) => {
+    if(e.target.id === "testDetailsModalOverlay") closeTestDetailsModal();
+  });
+  document.querySelectorAll(".modal-tab-btn").forEach(btn => {
+    btn.addEventListener("click", () => switchTestDetailsTab(btn.getAttribute("data-tab")));
+  });
+  document.addEventListener("keydown", (e) => {
+    if(e.key === "Escape" && $("testDetailsModalOverlay").classList.contains("open")) closeTestDetailsModal();
+  });
+
+  async function startTesting(){
+    $("ledgerWrap").scrollIntoView({ behavior: "smooth", block: "start" });
+
+    if(state.bench.mode === "list" && (state.bench.pages.length === 0 || state.cand.pages.length === 0)){
+      $("btnTest").disabled = true;
+      $("btnCrawl").disabled = true;
+      await crawlOne("bench", "benchUrl", "benchStatus");
+      await crawlOne("cand", "candUrl", "candStatus");
+      if(state.bench.pages.length || state.cand.pages.length) alignPanels();
+      updateListMismatchWarning();
+      if(state.bench.pages.length === 0 || state.cand.pages.length === 0){
+        updateCrawlButtonState();
+        return;
+      }
+    }
+
+    $("btnTest").disabled = true;
+    $("btnCrawl").disabled = true;
+    const progressEl = $("testProgress");
+    progressEl.style.display = "block";
+    progressEl.className = "status-line";
+    progressEl.textContent = "Starting verification tests…";
+    setTestBar(0, "");
+    state.results = [];
+    closeTestDetailsModal();
+    $("ledgerBody").innerHTML = `<tr><td colspan="6"><div class="empty">Comparing matched pages — findings will stream in real time…</div></td></tr>`;
+
+    const pollTimer = setInterval(pollTestProgress, 600);
+    try{
+      const result = await api("/api/test", { method:"POST", body: JSON.stringify({}) });
+      state.results = result.results;
+      renderLedger();
+      setTestBar(100, "done");
+      progressEl.textContent = `Completed — ${result.results.length} matched page(s) verified.`;
+      progressEl.className = "status-line ok";
+    }catch(e){
+      if(e.partialResults && e.partialResults.length){
+        state.results = e.partialResults;
+      }
+      renderLedger();
+      setTestBar(100, "err");
+      const count = state.results.length;
+      progressEl.textContent = `Failed: ${e.message}${count ? ` — preserved ${count} result(s) captured prior.` : ""}`;
+      progressEl.className = "status-line err";
+    }finally{
+      clearInterval(pollTimer);
+      $("btnTest").disabled = false;
+      updateCrawlButtonState();
+      pollAiSummary();
+      refreshIcons();
+    }
+  }
+
+  $("btnCrawl").addEventListener("click", crawlSites);
+  $("btnTest").addEventListener("click", startTesting);
+  $("maxPages").addEventListener("input", function(){
+    const cleaned = this.value.replace(/[^0-9]/g, "");
+    this.value = cleaned;
+    this.classList.toggle("invalid", cleaned.length === 0);
+  });
+  $("benchUrl").addEventListener("input", updateCrawlButtonState);
+  $("candUrl").addEventListener("input", updateCrawlButtonState);
+  $("benchUrl").addEventListener("keydown", e=>{ if(e.key==="Enter" && !$("btnCrawl").disabled) $("btnCrawl").click(); });
+  $("candUrl").addEventListener("keydown", e=>{ if(e.key==="Enter" && !$("btnCrawl").disabled) $("btnCrawl").click(); });
+  $("benchUrlList").addEventListener("input", () => { updateCrawlButtonState(); previewListMode("bench"); });
+  $("candUrlList").addEventListener("input", () => { updateCrawlButtonState(); previewListMode("cand"); });
+  setupModeToggle("bench");
+  setupModeToggle("cand");
+  setupFileUpload("bench");
+  setupFileUpload("cand");
+  setupHistorySelect("bench");
+  setupHistorySelect("cand");
+  pollAiSummary();
+  refreshIcons();
+
+})();
+</script>
+
+
+</body></html>

@@ -1,0 +1,9 @@
+{
+	"id": "N5w0PTz4RsFOcdN",
+	"json": "{\"id\":\"N5w0PTz4RsFOcdN\",\"url\":\"https://contentbloom.com/blog/author/pgaur/\",\"uniqueKey\":\"https://contentbloom.com/blog/author/pgaur\",\"method\":\"GET\",\"noRetry\":false,\"retryCount\":0,\"errorMessages\":[],\"headers\":{},\"userData\":{\"__crawlee\":{\"crawlDepth\":1,\"enqueueStrategy\":\"same-domain\"}}}",
+	"method": "GET",
+	"orderNo": 1788800514058,
+	"retryCount": 0,
+	"uniqueKey": "https://contentbloom.com/blog/author/pgaur",
+	"url": "https://contentbloom.com/blog/author/pgaur/"
+}

@@ -1,0 +1,9 @@
+{
+	"id": "BT1xMRJa908yJ7v",
+	"json": "{\"id\":\"BT1xMRJa908yJ7v\",\"url\":\"https://contentbloom.com/blog/author/content-bloom/\",\"uniqueKey\":\"https://contentbloom.com/blog/author/content-bloom\",\"method\":\"GET\",\"noRetry\":false,\"retryCount\":0,\"errorMessages\":[],\"headers\":{},\"userData\":{\"__crawlee\":{\"crawlDepth\":1,\"enqueueStrategy\":\"same-domain\"}}}",
+	"method": "GET",
+	"orderNo": 1788766440871,
+	"retryCount": 0,
+	"uniqueKey": "https://contentbloom.com/blog/author/content-bloom",
+	"url": "https://contentbloom.com/blog/author/content-bloom/"
+}

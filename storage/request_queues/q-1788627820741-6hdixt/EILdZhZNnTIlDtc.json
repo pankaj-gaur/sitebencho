@@ -1,0 +1,9 @@
+{
+	"id": "EILdZhZNnTIlDtc",
+	"json": "{\"id\":\"EILdZhZNnTIlDtc\",\"url\":\"https://contentbloom.com/blog/the-principles-of-debugging-easy-how-to-steps/\",\"uniqueKey\":\"https://contentbloom.com/blog/the-principles-of-debugging-easy-how-to-steps\",\"method\":\"GET\",\"noRetry\":false,\"retryCount\":1,\"errorMessages\":[\"Error: browserController.newPage() failed: 3f4rlsqyU60r404UYOyH_\\nCause:browserContext.newPage: Target page, context or browser has been closed.\\n    at BrowserPool._createPageForBrowser (C:\\\\Projects\\\\Site Diff Inspector\\\\site-diff-inspector\\\\node_modules\\\\@crawlee\\\\browser-pool\\\\browser-pool.js:413:19)\\n    at async C:\\\\Projects\\\\Site Diff Inspector\\\\site-diff-inspector\\\\node_modules\\\\@crawlee\\\\browser-pool\\\\browser-pool.js:303:20\"],\"headers\":{},\"userData\":{\"__crawlee\":{\"state\":5}}}",
+	"method": "GET",
+	"orderNo": 1788628189156,
+	"retryCount": 1,
+	"uniqueKey": "https://contentbloom.com/blog/the-principles-of-debugging-easy-how-to-steps",
+	"url": "https://contentbloom.com/blog/the-principles-of-debugging-easy-how-to-steps/"
+}

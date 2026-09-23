@@ -1,0 +1,9 @@
+{
+	"id": "MbWZkHhm2yVZ44I",
+	"json": "{\"id\":\"MbWZkHhm2yVZ44I\",\"url\":\"https://contentbloom.com/blog/category/presentations/\",\"uniqueKey\":\"https://contentbloom.com/blog/category/presentations\",\"method\":\"GET\",\"noRetry\":false,\"retryCount\":0,\"errorMessages\":[],\"headers\":{},\"userData\":{\"__crawlee\":{\"crawlDepth\":1,\"enqueueStrategy\":\"same-domain\"}}}",
+	"method": "GET",
+	"orderNo": 1788792367086,
+	"retryCount": 0,
+	"uniqueKey": "https://contentbloom.com/blog/category/presentations",
+	"url": "https://contentbloom.com/blog/category/presentations/"
+}

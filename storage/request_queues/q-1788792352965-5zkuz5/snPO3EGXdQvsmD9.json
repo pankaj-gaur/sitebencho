@@ -1,0 +1,9 @@
+{
+	"id": "snPO3EGXdQvsmD9",
+	"json": "{\"id\":\"snPO3EGXdQvsmD9\",\"url\":\"https://contentbloom.com/blog/category/ecommerce/\",\"uniqueKey\":\"https://contentbloom.com/blog/category/ecommerce\",\"method\":\"GET\",\"noRetry\":false,\"retryCount\":0,\"errorMessages\":[],\"headers\":{},\"userData\":{\"__crawlee\":{\"crawlDepth\":1,\"enqueueStrategy\":\"same-domain\"}}}",
+	"method": "GET",
+	"orderNo": 1788792367045,
+	"retryCount": 0,
+	"uniqueKey": "https://contentbloom.com/blog/category/ecommerce",
+	"url": "https://contentbloom.com/blog/category/ecommerce/"
+}

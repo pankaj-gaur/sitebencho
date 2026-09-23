@@ -1,0 +1,9 @@
+{
+	"id": "orI1JrMXGhfa4hE",
+	"json": "{\"id\":\"orI1JrMXGhfa4hE\",\"url\":\"https://contentbloom.com/blog/category/business-intelligence/\",\"uniqueKey\":\"https://contentbloom.com/blog/category/business-intelligence\",\"method\":\"GET\",\"noRetry\":false,\"retryCount\":0,\"errorMessages\":[],\"headers\":{},\"userData\":{\"__crawlee\":{\"crawlDepth\":1,\"enqueueStrategy\":\"same-domain\"}}}",
+	"method": "GET",
+	"orderNo": 1788766441923,
+	"retryCount": 0,
+	"uniqueKey": "https://contentbloom.com/blog/category/business-intelligence",
+	"url": "https://contentbloom.com/blog/category/business-intelligence/"
+}

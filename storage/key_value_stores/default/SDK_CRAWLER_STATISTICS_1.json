@@ -1,0 +1,50 @@
+{
+  "requestsFinished": 4,
+  "requestsFailed": 1,
+  "requestsRetries": 1,
+  "requestsFailedPerMinute": 9,
+  "requestsFinishedPerMinute": 40,
+  "requestMinDurationMillis": 894,
+  "requestMaxDurationMillis": 2373,
+  "requestTotalFailedDurationMillis": 211,
+  "requestTotalFinishedDurationMillis": 5476,
+  "crawlerStartedAt": "2026-09-23T04:50:31.039Z",
+  "crawlerFinishedAt": "2026-09-23T04:50:36.977Z",
+  "statsPersistedAt": "2026-09-23T04:50:36.977Z",
+  "crawlerRuntimeMillis": 6073,
+  "crawlerLastStartTimestamp": 1790139030904,
+  "requestRetryHistogram": [
+    4,
+    1
+  ],
+  "statsId": "1",
+  "requestAvgFailedDurationMillis": 211,
+  "requestAvgFinishedDurationMillis": 1369,
+  "requestTotalDurationMillis": 5687,
+  "requestsTotal": 5,
+  "requestsWithStatusCode": {
+    "200": 4
+  },
+  "errors": {
+    "C:\\Projects\\Site Diff Inspector\\site-diff-inspector\\node_modules\\@crawlee\\playwright\\internals\\utils\\playwright-utils.js:168:17": {
+      "missing error code": {
+        "Error": {
+          "page.goto: Download is starting": {
+            "count": 1
+          }
+        }
+      }
+    }
+  },
+  "retryErrors": {
+    "C:\\Projects\\Site Diff Inspector\\site-diff-inspector\\node_modules\\@crawlee\\playwright\\internals\\utils\\playwright-utils.js:168:17": {
+      "missing error code": {
+        "Error": {
+          "page.goto: Download is starting": {
+            "count": 1
+          }
+        }
+      }
+    }
+  }
+}

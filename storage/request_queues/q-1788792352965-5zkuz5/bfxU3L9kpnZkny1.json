@@ -1,0 +1,9 @@
+{
+	"id": "bfxU3L9kpnZkny1",
+	"json": "{\"id\":\"bfxU3L9kpnZkny1\",\"url\":\"https://contentbloom.com/blog/category/adobe-aem/\",\"uniqueKey\":\"https://contentbloom.com/blog/category/adobe-aem\",\"method\":\"GET\",\"noRetry\":false,\"retryCount\":0,\"errorMessages\":[],\"headers\":{},\"userData\":{\"__crawlee\":{\"crawlDepth\":1,\"enqueueStrategy\":\"same-domain\"}}}",
+	"method": "GET",
+	"orderNo": 1788792365892,
+	"retryCount": 0,
+	"uniqueKey": "https://contentbloom.com/blog/category/adobe-aem",
+	"url": "https://contentbloom.com/blog/category/adobe-aem/"
+}

@@ -1,0 +1,9 @@
+{
+	"id": "ud4YZfraTz7IuoG",
+	"json": "{\"id\":\"ud4YZfraTz7IuoG\",\"url\":\"https://contentbloom.com/blog/everything-you-need-to-know-about-the-future-of-sales-right-now/\",\"loadedUrl\":\"https://contentbloom.com/blog/everything-you-need-to-know-about-the-future-of-sales-right-now/\",\"uniqueKey\":\"https://contentbloom.com/blog/everything-you-need-to-know-about-the-future-of-sales-right-now\",\"method\":\"GET\",\"noRetry\":false,\"retryCount\":1,\"errorMessages\":[\"page.$$eval: Target crashed \\n    at extractUrlsFromPage (C:\\\\Projects\\\\Site Diff Inspector\\\\site-diff-inspector\\\\node_modules\\\\@crawlee\\\\browser\\\\internals\\\\browser-crawler.js:509:30)\\n    at browserCrawlerEnqueueLinks (C:\\\\Projects\\\\Site Diff Inspector\\\\site-diff-inspector\\\\node_modules\\\\@crawlee\\\\browser\\\\internals\\\\browser-crawler.js:485:24)\\n    at crawlingContext.enqueueLinks (C:\\\\Projects\\\\Site Diff Inspector\\\\site-diff-inspector\\\\node_modules\\\\@crawlee\\\\browser\\\\internals\\\\browser-crawler.js:322:20)\\n    at async PlaywrightCrawler.requestHandler (C:\\\\Projects\\\\Site Diff Inspector\\\\site-diff-inspector\\\\crawler.js:170:9)\\n    at async wrap (C:\\\\Projects\\\\Site Diff Inspector\\\\site-diff-inspector\\\\node_modules\\\\@apify\\\\timeout\\\\cjs\\\\index.cjs:56:21)\"],\"headers\":{},\"userData\":{\"__crawlee\":{\"state\":5}}}",
+	"method": "GET",
+	"orderNo": 1788628189156,
+	"retryCount": 1,
+	"uniqueKey": "https://contentbloom.com/blog/everything-you-need-to-know-about-the-future-of-sales-right-now",
+	"url": "https://contentbloom.com/blog/everything-you-need-to-know-about-the-future-of-sales-right-now/"
+}

@@ -1,0 +1,1303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Site Diff Inspector</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#EFEAE0;
+    --panel:#FBFAF5;
+    --ink:#23262B;
+    --ink-soft:#5B5A52;
+    --line:#D9D2C0;
+    --line-strong:#B9B097;
+    --accent:#1F5C6B;
+    --accent-soft:#DCE9E8;
+    --green:#3C7A4C;
+    --green-soft:#E3EEE2;
+    --red:#B23A32;
+    --red-soft:#F3E2DF;
+    --amber:#B8792C;
+    --amber-soft:#F3E7D4;
+    --sans: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
+    --mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:var(--sans);
+    font-size:14px;
+    line-height:1.5;
+    padding:28px;
+    min-height:100vh;
+  }
+  .wrap{max-width:1320px;margin:0 auto;}
+
+  .nav{display:flex;gap:0;margin-bottom:18px;border:1px solid var(--line-strong);background:var(--panel);width:fit-content;}
+  .toolbar{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:18px;flex-wrap:wrap;}
+  .pages-field{display:flex;align-items:center;gap:10px;border:1px solid var(--line-strong);background:var(--panel);padding:9px 14px;}
+  .pages-field span{font-size:12px;font-weight:600;color:var(--ink-soft);white-space:nowrap;}
+  .pages-field input{
+    font-family:var(--mono);font-size:14px;font-weight:600;color:var(--ink);
+    width:64px;text-align:center;padding:6px 4px;border:1px solid var(--line-strong);background:#fff;
+  }
+  .pages-field input:focus{outline:2px solid var(--accent);outline-offset:-1px;}
+  .pages-field input.invalid{border-color:var(--red);outline:2px solid var(--red);outline-offset:-1px;}
+  .nav a{font-size:12.5px;font-weight:600;color:var(--ink-soft);text-decoration:none;padding:9px 16px;border-right:1px solid var(--line);}
+  .nav a:last-child{border-right:none;}
+  .nav a.active{background:var(--ink);color:#fff;}
+  .nav a:hover:not(.active){background:var(--accent-soft);color:var(--accent);}
+
+  .masthead{
+    display:flex;justify-content:space-between;align-items:flex-end;
+    border-bottom:2px solid var(--ink);padding-bottom:14px;margin-bottom:18px;
+    flex-wrap:wrap;gap:10px;
+  }
+  .masthead h1{font-size:22px;font-weight:700;margin:0;letter-spacing:-0.01em;}
+  .masthead .sub{font-size:12.5px;color:var(--ink-soft);margin-top:4px;max-width:640px;}
+  .masthead .sub code{font-family:var(--mono);background:var(--accent-soft);padding:1px 4px;border-radius:2px;}
+
+  .dash{
+    display:flex;align-items:stretch;gap:0;border:1px solid var(--line-strong);
+    background:var(--panel);margin-bottom:22px;flex-wrap:wrap;
+  }
+  .dash .stat{flex:1 1 140px;padding:14px 18px;border-right:1px solid var(--line);}
+  .dash .stat:last-child{border-right:none;}
+  .dash .stat .num{font-family:var(--mono);font-size:26px;font-weight:600;line-height:1;}
+  .dash .stat .lbl{font-size:11.5px;color:var(--ink-soft);margin-top:6px;}
+  .dash .stat.green .num{color:var(--green);}
+  .dash .stat.red .num{color:var(--red);}
+  .dash .stat.amber .num{color:var(--amber);}
+  .dash .action{flex:0 0 auto;display:flex;align-items:center;padding:14px 20px;background:var(--ink);}
+  button.primary{
+    font-family:var(--sans);font-weight:600;font-size:13.5px;color:#fff;background:var(--accent);
+    border:1px solid var(--accent);padding:10px 18px;cursor:pointer;
+  }
+  button.primary:hover:not(:disabled){background:#194a56;}
+  button.primary:disabled{background:#9AA0A6;border-color:#9AA0A6;cursor:not-allowed;}
+  button.ghost{
+    font-family:var(--sans);font-weight:600;font-size:12.5px;color:var(--ink);background:transparent;
+    border:1px solid var(--ink);padding:8px 14px;cursor:pointer;
+  }
+  button.ghost:hover:not(:disabled){background:var(--ink);color:#fff;}
+  button.ghost:disabled{opacity:0.35;cursor:not-allowed;}
+
+  .panels{
+    display:grid;grid-template-columns:1fr 26px 1fr;
+    border:1px solid var(--line-strong);background:var(--panel);margin-bottom:22px;
+  }
+  .panel{padding:16px 18px 18px;}
+  .panel-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+  .panel-head .tag{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.04em;color:var(--ink-soft);}
+  .panel-head .tag.left{color:var(--accent);}
+  .panel-head .tag.right{color:var(--amber);}
+  .inputrow{display:flex;gap:6px;margin-bottom:8px;}
+  .mode-toggle{display:flex;gap:0;margin-bottom:8px;border:1px solid var(--line-strong);width:fit-content;}
+  .mode-toggle button{
+    font-family:var(--sans);font-size:11px;font-weight:600;color:var(--ink-soft);
+    background:var(--panel);border:none;padding:5px 10px;cursor:pointer;border-right:1px solid var(--line);
+  }
+  .mode-toggle button:last-child{border-right:none;}
+  .mode-toggle button.active{background:var(--ink);color:#fff;}
+  .mode-toggle button:hover:not(.active){background:var(--accent-soft);color:var(--accent);}
+  .url-list-wrap{margin-bottom:8px;}
+  .history-select-wrap{margin-bottom:8px;}
+  .history-select-wrap select{
+    width:100%;font-family:var(--mono);font-size:11.5px;padding:9px 10px;
+    border:1px solid var(--line-strong);background:#fff;color:var(--ink);
+  }
+  .history-select-wrap select:focus{outline:2px solid var(--accent);outline-offset:-1px;}
+  .url-list-wrap textarea{
+    width:100%;font-family:var(--mono);font-size:11.5px;padding:8px 10px;
+    border:1px solid var(--line-strong);background:#fff;color:var(--ink);resize:vertical;min-height:78px;
+  }
+  .url-list-wrap textarea:focus{outline:2px solid var(--accent);outline-offset:-1px;}
+  .url-list-wrap .file-row{display:flex;align-items:center;gap:8px;margin-top:6px;font-size:11px;color:var(--ink-soft);}
+  .url-list-wrap input[type=file]{font-size:11px;max-width:200px;}
+  input[type=text]{
+    flex:1;font-family:var(--mono);font-size:12.5px;padding:9px 10px;
+    border:1px solid var(--line-strong);background:#fff;color:var(--ink);
+  }
+  input[type=text]:focus{outline:2px solid var(--accent);outline-offset:-1px;}
+  .status-line{font-size:11.5px;color:var(--ink-soft);min-height:16px;margin-bottom:8px;font-family:var(--mono);}
+  .status-line.err{color:var(--red);}
+  .status-line.ok{color:var(--green);}
+
+  .progress-track{height:6px;background:var(--line);margin-bottom:10px;overflow:hidden;}
+  .progress-fill{height:100%;width:0%;background:var(--accent);transition:width 0.25s ease;}
+  .progress-fill.done{background:var(--green);}
+  .progress-fill.err{background:var(--red);}
+
+  .divider{position:relative;border-left:1px dashed var(--line-strong);border-right:1px dashed var(--line-strong);}
+  .divider .node{
+    position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+    width:26px;height:26px;border-radius:50%;background:var(--panel);border:1px solid var(--line-strong);
+    display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:14px;color:var(--ink-soft);
+  }
+
+  table{width:100%;border-collapse:collapse;}
+  thead th{
+    text-align:left;font-size:10.5px;text-transform:uppercase;letter-spacing:0.04em;color:var(--ink-soft);
+    font-weight:600;padding:7px 6px;border-bottom:1px solid var(--line-strong);
+    position:sticky;top:0;background:var(--panel);
+  }
+  tbody td{padding:8px 6px;border-bottom:1px solid var(--line);vertical-align:top;font-size:12.5px;}
+  tbody tr:hover{background:var(--accent-soft);}
+  .idx{font-family:var(--mono);color:var(--ink-soft);width:26px;}
+  .ptitle{font-weight:500;}
+  .ppath{font-family:var(--mono);font-size:11.5px;color:var(--ink-soft);word-break:break-all;}
+  .scrollbox{max-height:340px;overflow-y:auto;border-top:1px solid var(--line);}
+  .empty{padding:26px 10px;text-align:center;color:var(--ink-soft);font-size:12.5px;border:1px dashed var(--line-strong);margin-top:6px;}
+  .row-unmatched td{background:var(--amber-soft);}
+  .row-missing td{background:#EFEAE0;color:var(--ink-soft);}
+
+  .ledger-wrap{border:1px solid var(--line-strong);background:var(--panel);}
+  .ledger-head{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;border-bottom:2px solid var(--ink);}
+  .ledger-head h2{font-size:15px;margin:0;font-weight:700;}
+  .ai-summary-wrap{border:1px solid var(--line-strong);background:var(--panel);margin-bottom:18px;}
+  .ai-summary-head{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;color:var(--accent);padding:10px 16px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:8px;background:#F4F1FC;}
+  .ai-summary-badge{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;background:#7A5FC7;color:#fff;font-size:9px;line-height:1;}
+  .ai-summary-body{padding:0;}
+  .ai-summary-entry{padding:12px 16px;border-bottom:1px dashed var(--line);}
+  .ai-summary-entry:last-child{border-bottom:none;}
+  .ai-summary-entry-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px;flex-wrap:wrap;}
+  .ai-summary-phase{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.03em;color:#7A5FC7;}
+  .ai-summary-time{font-size:10.5px;color:var(--ink-soft);font-family:var(--mono);white-space:nowrap;}
+  .ai-summary-html{font-size:13px;line-height:1.6;color:var(--ink);}
+  .ai-summary-html p{margin:0 0 8px;}
+  .ai-summary-html p:last-child{margin-bottom:0;}
+  .ai-summary-html ul,.ai-summary-html ol{margin:0 0 8px 18px;padding:0;}
+  .ai-summary-html li{margin-bottom:3px;}
+  .ai-summary-html strong{color:var(--ink);}
+  .ai-summary-error{color:var(--red);font-size:12px;}
+  .ai-summary-retry-btn{
+    font-family:var(--sans);font-weight:600;font-size:11px;color:var(--red);
+    background:transparent;border:1px solid var(--red);padding:4px 10px;
+    cursor:pointer;margin-top:6px;
+  }
+  .ai-summary-retry-btn:hover:not(:disabled){background:var(--red);color:#fff;}
+  .ai-summary-retry-btn:disabled{opacity:0.5;cursor:not-allowed;}
+  .ai-summary-status{font-family:var(--mono);font-size:11px;color:var(--ink-soft);}
+  .spinner{display:inline-block;width:12px;height:12px;border:2px solid var(--line-strong);border-top-color:var(--accent);border-radius:50%;animation:spin 0.7s linear infinite;vertical-align:middle;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .report-links{display:flex;gap:8px;}
+  .report-link{
+    font-family:var(--sans);font-weight:600;font-size:11.5px;color:var(--accent);
+    text-decoration:none;border:1px solid var(--accent);padding:6px 12px;white-space:nowrap;
+  }
+  .report-link:hover{background:var(--accent);color:#fff;}
+  .report-link.disabled{color:var(--ink-soft);border-color:var(--line-strong);pointer-events:none;opacity:0.5;}
+  .legend{display:flex;gap:16px;font-size:11.5px;color:var(--ink-soft);flex-wrap:wrap;}
+  .legend span{display:inline-flex;align-items:center;gap:5px;}
+  .legend b{font-family:var(--mono);font-size:14px;}
+  .legend .g b{color:var(--green);} .legend .r b{color:var(--red);} .legend .a b{color:var(--amber);}
+
+  .ledger-table{width:100%;border-collapse:collapse;}
+  .ledger-table thead th{
+    text-align:left;font-size:10.5px;text-transform:uppercase;letter-spacing:0.04em;
+    color:var(--ink-soft);font-weight:600;padding:9px 10px;border-bottom:1px solid var(--line-strong);
+  }
+  .ledger-table tbody td{padding:10px;border-bottom:1px solid var(--line);font-size:12.5px;vertical-align:top;}
+  .col-details{width:40px;text-align:center;}
+  .details-icon-btn{
+    background:transparent;border:none;cursor:pointer;font-size:18px;
+    color:var(--accent);padding:2px 4px;line-height:1;border-radius:3px;
+  }
+  .details-icon-btn:hover:not(:disabled){background:var(--accent-soft);}
+  .details-icon-btn:disabled{color:var(--line-strong);cursor:default;}
+
+  .modal-overlay{
+    display:none;position:fixed;inset:0;background:rgba(35,38,43,0.55);
+    z-index:1000;align-items:flex-start;justify-content:center;padding:40px 20px;overflow-y:auto;
+  }
+  .modal-overlay.open{display:flex;}
+  .modal-box{
+    background:var(--panel);border:1px solid var(--line-strong);max-width:1200px;width:100%;
+    box-shadow:0 8px 28px rgba(0,0,0,0.25);
+  }
+  .modal-head{
+    display:flex;justify-content:space-between;align-items:flex-start;gap:16px;
+    padding:16px 20px;border-bottom:2px solid var(--ink);
+  }
+  .modal-head h2{font-size:16px;margin:0 0 3px;font-weight:700;}
+  .modal-head .modal-subtitle{font-size:11.5px;font-family:var(--mono);color:var(--ink-soft);word-break:break-all;}
+  .modal-close-btn{
+    background:transparent;border:1px solid var(--line-strong);font-size:16px;line-height:1;
+    padding:4px 9px;cursor:pointer;color:var(--ink-soft);flex-shrink:0;
+  }
+  .modal-close-btn:hover{background:var(--ink);color:#fff;border-color:var(--ink);}
+
+  .modal-tabs{display:flex;gap:0;border-bottom:1px solid var(--line-strong);background:var(--panel);}
+  .modal-tab-btn{
+    font-family:var(--sans);font-size:12px;font-weight:600;color:var(--ink-soft);
+    background:transparent;border:none;border-bottom:2px solid transparent;
+    padding:10px 18px;cursor:pointer;
+  }
+  .modal-tab-btn.active{color:var(--accent);border-bottom-color:var(--accent);}
+  .modal-tab-btn:hover:not(.active){background:var(--accent-soft);}
+  .modal-tab-panel{display:none;}
+  .modal-tab-panel.active{display:block;}
+
+  .diff-columns{display:grid;grid-template-columns:1fr 1fr;gap:0;max-height:65vh;}
+  .diff-pane{overflow:auto;border-right:1px solid var(--line);}
+  .diff-pane:last-child{border-right:none;}
+  .diff-pane-head{
+    position:sticky;top:0;background:var(--ink);color:#fff;font-size:10.5px;font-weight:700;
+    text-transform:uppercase;letter-spacing:0.04em;padding:6px 10px;z-index:1;
+  }
+  .diff-line{
+    font-family:var(--mono);font-size:11px;white-space:pre-wrap;word-break:break-all;
+    padding:2px 10px;border-bottom:1px solid #F4F1E8;
+  }
+  .diff-line.diff-same{color:var(--ink);}
+  .diff-line.diff-added{background:var(--green-soft);color:#1F5C2E;}
+  .diff-line.diff-removed{background:var(--red-soft);color:#7A2620;}
+  .diff-line.diff-blank{background:#F4F1E8;}
+  .diff-empty-msg{padding:22px 18px;text-align:center;color:var(--ink-soft);font-size:12.5px;}
+  .diff-truncated-note{padding:8px 18px;font-size:11px;color:var(--amber);background:var(--amber-soft);border-bottom:1px solid var(--line);}
+
+  .screenshot-columns{display:grid;grid-template-columns:1fr 1fr;gap:0;max-height:65vh;}
+  .screenshot-pane{overflow:auto;border-right:1px solid var(--line);padding:10px;text-align:center;}
+  .screenshot-pane:last-child{border-right:none;}
+  .screenshot-pane-head{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;color:var(--ink-soft);margin-bottom:8px;}
+  .screenshot-pane img{max-width:100%;border:1px solid var(--line-strong);display:block;margin:0 auto;}
+  .screenshot-error{padding:22px 18px;text-align:center;color:var(--red);font-size:12px;}
+  .ledger-table tbody tr:hover{background:#F4F1E8;}
+  .symbol{font-family:var(--mono);font-size:20px;font-weight:600;width:34px;text-align:center;display:inline-block;}
+  .row-green .symbol{color:var(--green);}
+  .row-red .symbol{color:var(--red);}
+  .row-amber .symbol{color:var(--amber);}
+  .pill{display:inline-block;font-size:10.5px;font-weight:600;padding:2px 7px;text-transform:uppercase;letter-spacing:0.03em;}
+  .row-green .pill{background:var(--green-soft);color:var(--green);}
+  .row-red .pill{background:var(--red-soft);color:var(--red);}
+  .row-amber .pill{background:var(--amber-soft);color:var(--amber);}
+  .detail{color:var(--ink-soft);font-size:11.5px;margin-top:3px;}
+  .brokenlist{font-family:var(--mono);font-size:10.5px;color:var(--red);margin-top:4px;line-height:1.6;word-break:break-all;}
+  .assetdiff{font-family:var(--mono);font-size:10.5px;margin-top:6px;background:#F4F1E8;border:1px solid var(--line);padding:6px 8px;word-break:break-all;line-height:1.6;color:var(--accent);}
+  .assetdiff-label{font-family:var(--sans);font-size:10.5px;font-weight:600;color:var(--ink-soft);margin-bottom:2px;}
+  .diffsnippet{font-family:var(--mono);font-size:10.5px;margin-top:6px;background:#F4F1E8;border:1px solid var(--line);padding:6px 8px;word-break:break-all;line-height:1.6;}
+  .diffsnippet div{margin-bottom:3px;}
+  .diffsnippet div:last-child{margin-bottom:0;}
+  .diff-tag{display:inline-block;font-family:var(--sans);font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.03em;padding:1px 5px;margin-right:6px;border-radius:2px;}
+  .diff-tag.bench{background:var(--accent-soft);color:var(--accent);}
+  .diff-tag.cand{background:var(--amber-soft);color:var(--amber);}
+  .path-cell{font-family:var(--mono);font-size:12px;}
+  .path-cell a{color:var(--ink-soft);text-decoration:none;font-size:11px;display:block;margin-top:2px;}
+  .path-cell a:hover{text-decoration:underline;}
+
+  .note{font-size:11.5px;color:var(--ink-soft);background:var(--accent-soft);border:1px solid var(--line);padding:10px 14px;margin-bottom:18px;}
+  .note b{color:var(--accent);}
+  .note.err{background:var(--red-soft);color:var(--red);}
+  .note.warn{background:var(--amber-soft);color:var(--amber);}
+  .note.warn b{color:var(--amber);}
+  .foot-progress{padding:10px 18px;font-family:var(--mono);font-size:11.5px;color:var(--ink-soft);border-top:1px solid var(--line);}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="masthead">
+    <div>
+      <h1>Site Diff Inspector</h1>
+      <div class="sub">Crawls a benchmark site and a candidate site with a real headless browser, matches pages by <code>path</code> (URL after the domain), then diffs visible page content and candidate link health page‑by‑page. Comparison ignores markup, scripts, and tracking-tag noise — it checks what a reader actually sees.</div>
+    </div>
+  </div>
+
+  <div class="toolbar">
+    <div class="nav" style="margin-bottom:0;">
+      <a href="index.html" class="active">Diff Inspector</a>
+      <a href="analysis.html">Site Analysis</a>
+      <a href="history.html">History</a>
+    </div>
+    <label class="pages-field">
+      <span>Max Pages to Scan</span>
+      <input type="text" id="maxPages" inputmode="numeric" value="500" />
+    </label>
+  </div>
+
+  <div class="note" id="serverNote">
+    Rendering runs server-side via <b>Crawlee + Playwright</b> (a real headless Chromium — captures JS-rendered content, not just raw HTML) and links are checked with <b>Linkinator</b>. Crawling seeds from the site's sitemap first (falls back to link-following if there isn't one), so counts reflect the real site, not just what's linked from the homepage. Crawling a large site takes a while because it actually renders every page — this is expected. Prefer to check specific pages instead of a whole site? Switch either panel to <b>Use a URL list</b> and paste or upload exactly the URLs you want compared — no crawling happens in that mode, and pages are paired by position (1st benchmark URL vs 1st candidate URL, and so on) rather than by matching path, so the two lists can be on entirely different domains.
+  </div>
+
+  <div class="note warn" id="listMismatchWarning" style="display:none;"></div>
+
+  <div class="dash">
+    <div class="stat"><div class="num" id="statBench">0</div><div class="lbl">Benchmark pages</div></div>
+    <div class="stat"><div class="num" id="statCand">0</div><div class="lbl">Candidate pages</div></div>
+    <div class="stat"><div class="num" id="statMatched">0</div><div class="lbl">Matched by path</div></div>
+    <div class="stat green"><div class="num" id="statGreen">–</div><div class="lbl">= Equal</div></div>
+    <div class="stat red"><div class="num" id="statRed">–</div><div class="lbl">≠ Source changed</div></div>
+    <div class="stat amber"><div class="num" id="statAmber">–</div><div class="lbl">≠ Links differ</div></div>
+    <div class="action">
+      <button class="primary" id="btnCrawl" disabled>Crawl sites</button>
+    </div>
+    <div class="action">
+      <button class="primary" id="btnTest" disabled>Start testing</button>
+    </div>
+  </div>
+
+  <div class="ai-summary-wrap" id="aiSummaryWrap" style="display:none;">
+    <div class="ai-summary-head"><span class="ai-summary-badge">&#10024;</span> AI Summary</div>
+    <div class="ai-summary-body" id="aiSummaryBody"></div>
+  </div>
+
+  <div class="report-links" id="crawlReportLinks" style="margin-bottom:14px;">
+    <a href="/api/report/diff.csv" id="dlCsv" class="report-link disabled">Download CSV</a>
+    <a href="/api/report/diff.pdf" id="dlPdf" class="report-link disabled">Download PDF</a>
+  </div>
+
+  <div class="panels">
+    <div class="panel">
+      <div class="panel-head"><span class="tag left">Benchmark</span></div>
+      <div class="mode-toggle" id="benchModeToggle">
+        <button type="button" class="active" data-mode="crawl">Crawl a site</button>
+        <button type="button" data-mode="list">Use a URL list</button>
+        <button type="button" data-mode="history">Load from history</button>
+      </div>
+      <div class="inputrow" id="benchCrawlInput">
+        <input type="text" id="benchUrl" placeholder="https://benchmark-site.com" />
+      </div>
+      <div class="url-list-wrap" id="benchListInput" style="display:none;">
+        <textarea id="benchUrlList" rows="4" placeholder="https://example.com/page-1&#10;https://example.com/page-2&#10;https://example.com/page-3"></textarea>
+        <div class="file-row">
+          <input type="file" id="benchUrlFile" accept=".txt,.csv" />
+          <span>or paste above — one URL per line</span>
+        </div>
+      </div>
+      <div class="history-select-wrap" id="benchHistoryInput" style="display:none;">
+        <select id="benchHistorySelect"><option value="">Loading saved crawls…</option></select>
+      </div>
+      <div class="progress-track"><div class="progress-fill" id="benchBar"></div></div>
+      <div class="status-line" id="benchStatus">Enter both URLs, then press Crawl sites.</div>
+      <div class="scrollbox">
+        <table>
+          <thead><tr><th class="idx">#</th><th>Title</th><th>Path</th></tr></thead>
+          <tbody id="benchBody"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="divider"><div class="node" id="dividerNode">·</div></div>
+    <div class="panel">
+      <div class="panel-head"><span class="tag right">Candidate</span></div>
+      <div class="mode-toggle" id="candModeToggle">
+        <button type="button" class="active" data-mode="crawl">Crawl a site</button>
+        <button type="button" data-mode="list">Use a URL list</button>
+        <button type="button" data-mode="history">Load from history</button>
+      </div>
+      <div class="inputrow" id="candCrawlInput">
+        <input type="text" id="candUrl" placeholder="https://candidate-site.com" />
+      </div>
+      <div class="url-list-wrap" id="candListInput" style="display:none;">
+        <textarea id="candUrlList" rows="4" placeholder="https://example.com/page-1&#10;https://example.com/page-2&#10;https://example.com/page-3"></textarea>
+        <div class="file-row">
+          <input type="file" id="candUrlFile" accept=".txt,.csv" />
+          <span>or paste above — one URL per line</span>
+        </div>
+      </div>
+      <div class="history-select-wrap" id="candHistoryInput" style="display:none;">
+        <select id="candHistorySelect"><option value="">Loading saved crawls…</option></select>
+      </div>
+      <div class="progress-track"><div class="progress-fill" id="candBar"></div></div>
+      <div class="status-line" id="candStatus">Enter both URLs, then press Crawl sites.</div>
+      <div class="scrollbox">
+        <table>
+          <thead><tr><th class="idx">#</th><th>Title</th><th>Path</th></tr></thead>
+          <tbody id="candBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="ledger-wrap" id="ledgerWrap">
+    <div class="ledger-head">
+      <h2>Comparison ledger</h2>
+      <div class="legend">
+        <span class="g"><b>=</b> same visible content, links match</span>
+        <span class="r"><b>&ne;</b> visible content changed (or page unreachable)</span>
+        <span class="a"><b>&ne;</b> content matches, but the set of links differs</span>
+      </div>
+    </div>
+    <div style="padding:12px 18px 0;">
+      <div class="progress-track" style="margin-bottom:0;"><div class="progress-fill" id="testBar"></div></div>
+      <div class="status-line" id="testProgress" style="display:none;margin:8px 0 0;"></div>
+    </div>
+    <table class="ledger-table">
+      <thead>
+        <tr><th class="idx">#</th><th>Title</th><th>Path</th><th>Status</th><th>Detail</th><th class="col-details"></th></tr>
+      </thead>
+      <tbody id="ledgerBody">
+        <tr><td colspan="6"><div class="empty">Crawl both sites, then press Start testing (enabled once both finish).</div></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+</div>
+
+<div class="modal-overlay" id="testDetailsModalOverlay">
+  <div class="modal-box">
+    <div class="modal-head">
+      <div>
+        <h2 id="testDetailsModalTitle">Page details</h2>
+        <div class="modal-subtitle" id="testDetailsModalPath"></div>
+      </div>
+      <button type="button" class="modal-close-btn" id="testDetailsModalCloseBtn">&times; Close</button>
+    </div>
+    <div class="modal-tabs">
+      <button type="button" class="modal-tab-btn active" data-tab="source">Source Diff</button>
+      <button type="button" class="modal-tab-btn" data-tab="layout">Layout</button>
+    </div>
+    <div class="modal-tab-panel active" id="testDetailsSourceTab">
+      <div id="testDetailsSourceBody"></div>
+    </div>
+    <div class="modal-tab-panel" id="testDetailsLayoutTab">
+      <div id="testDetailsLayoutBody"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  const state = {
+    bench: { pages: [], mode: "crawl", invalidCount: 0 },
+    cand:  { pages: [], mode: "crawl", invalidCount: 0 },
+    results: []
+  };
+
+  const $ = id => document.getElementById(id);
+
+  function escapeHtml(s){
+    return String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+  }
+
+  // Accepts one-URL-per-line text, or simple CSV (comma-separated URLs on a
+  // line) — used for both the pasted textarea and uploaded .txt/.csv files.
+  function parseUrlListText(text){
+    const lines = String(text || "").split(/\r?\n/);
+    const urls = [];
+    for(const line of lines){
+      const trimmed = line.trim();
+      if(!trimmed || trimmed.startsWith("#")) continue;
+      trimmed.split(",").map(p => p.trim()).filter(Boolean).forEach(p => {
+        if(/^https?:\/\//i.test(p) || /^[a-z0-9.-]+\.[a-z]{2,}(\/|$|\?)/i.test(p)) urls.push(p);
+      });
+    }
+    return Array.from(new Set(urls));
+  }
+
+  // Best-effort client-side path derivation, just for the instant preview
+  // below — the server recomputes the real path from the actual rendered
+  // URL once testing runs, this is only what the table shows meanwhile.
+  function pathFromUrl(urlStr){
+    try{
+      const u = new URL(/^https?:\/\//i.test(urlStr) ? urlStr : `https://${urlStr}`);
+      let p = u.pathname;
+      if(p.length > 1 && p.endsWith("/")) p = p.slice(0, -1);
+      if(p === "") p = "/";
+      return p + u.search;
+    }catch(e){ return urlStr; }
+  }
+
+  // The URLs are already known in list mode — no need to wait for an actual
+  // render just to LIST them. This gives an instant table preview as soon as
+  // the textarea has content; the real crawlOne() call (at Start testing
+  // time) overwrites these placeholders with the actually-rendered titles.
+  function previewListMode(slot){
+    if(state[slot].mode !== "list") return;
+    const urls = parseUrlListText($(`${slot}UrlList`).value);
+    state[slot].pages = urls.map(u => ({ title: "(not yet rendered)", url: u, path: pathFromUrl(u) }));
+    state[slot].invalidCount = 0;
+    renderPanel(slot);
+    updateDashboard();
+    updateListMismatchWarning();
+  }
+
+  // Both sides always share one mode — toggling either switches both, so
+  // there's no mixed crawl+list+history state to reason about downstream.
+  function setMode(mode){
+    ["bench", "cand"].forEach(slot => {
+      state[slot].mode = mode;
+      const toggle = $(`${slot}ModeToggle`);
+      toggle.querySelectorAll("button").forEach(b => b.classList.toggle("active", b.getAttribute("data-mode") === mode));
+      $(`${slot}CrawlInput`).style.display = mode === "crawl" ? "" : "none";
+      $(`${slot}ListInput`).style.display = mode === "list" ? "" : "none";
+      $(`${slot}HistoryInput`).style.display = mode === "history" ? "" : "none";
+      if(mode === "list"){
+        previewListMode(slot);
+      }else if(mode === "history"){
+        loadHistoryOptions(slot);
+        state[slot].pages = [];
+        renderPanel(slot);
+      }else{
+        state[slot].pages = [];
+        renderPanel(slot);
+      }
+    });
+    updateDashboard();
+    updateListMismatchWarning();
+    // Switching modes clears the page lists above (a visible "starting
+    // fresh" signal) — the AI summary panel should match, rather than
+    // leaving the previous mode's summary sitting there until something
+    // else happens to refresh it.
+    renderAiSummary({ status: "idle", entries: [] });
+    // "Crawl sites" is a discovery step — meaningless once you've already
+    // told it exactly which URLs to use (list mode) or already have a
+    // rendered page list saved (history mode). "Start testing" becomes the
+    // single action instead — it renders the lists itself before testing
+    // for list mode; history mode's selection already loads instantly.
+    $("btnCrawl").disabled = mode !== "crawl";
+    $("btnCrawl").title = mode !== "crawl" ? "Not needed in this mode — press Start testing directly." : "";
+    updateCrawlButtonState();
+  }
+
+  function setupModeToggle(slot){
+    const toggle = $(`${slot}ModeToggle`);
+    toggle.querySelectorAll("button").forEach(btn => {
+      btn.addEventListener("click", () => setMode(btn.getAttribute("data-mode")));
+    });
+  }
+
+  async function loadHistoryOptions(slot){
+    const select = $(`${slot}HistorySelect`);
+    select.innerHTML = `<option value="">Loading saved crawls…</option>`;
+    try{
+      const result = await api("/api/history/pagesets");
+      const opts = result.options || [];
+      if(opts.length === 0){
+        select.innerHTML = `<option value="">No saved crawls yet</option>`;
+        return;
+      }
+      select.innerHTML = `<option value="">Select a saved crawl…</option>` +
+        opts.map(o => `<option value="${escapeHtml(o.key)}">${escapeHtml(o.label)}</option>`).join("");
+    }catch(e){
+      select.innerHTML = `<option value="">Failed to load saved crawls</option>`;
+    }
+  }
+
+  function setupHistorySelect(slot){
+    const select = $(`${slot}HistorySelect`);
+    select.addEventListener("change", async () => {
+      updateCrawlButtonState();
+      if(!select.value) return;
+      // Loading from history resets aiSummaryState server-side same as any
+      // other fresh load for this slot — clear the panel immediately rather
+      // than leaving the previous session's summary sitting there.
+      renderAiSummary({ status: "idle", entries: [] });
+      // Loading from history is just a disk read server-side — no crawling,
+      // so this happens immediately on selection rather than waiting for a
+      // separate action click.
+      await crawlOne(slot, `${slot}Url`, `${slot}Status`);
+      updateDashboard();
+      if(state.bench.pages.length || state.cand.pages.length) alignPanels();
+      updateCrawlButtonState();
+      pollAiSummary();
+    });
+  }
+
+  function setupFileUpload(slot){
+    const fileInput = $(`${slot}UrlFile`);
+    const textarea = $(`${slot}UrlList`);
+    fileInput.addEventListener("change", () => {
+      const file = fileInput.files[0];
+      if(!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        const parsed = parseUrlListText(String(reader.result || ""));
+        const existing = textarea.value.trim();
+        textarea.value = existing ? existing + "\n" + parsed.join("\n") : parsed.join("\n");
+        fileInput.value = "";
+        updateCrawlButtonState();
+        previewListMode(slot);
+      };
+      reader.onerror = () => alert("Failed to read that file.");
+      reader.readAsText(file);
+    });
+  }
+
+  async function api(path, opts){
+    const res = await fetch(path, Object.assign({ headers: { "Content-Type": "application/json" } }, opts));
+    let body;
+    try { body = await res.json(); } catch(e){ body = { ok:false, error:"Server returned a non-JSON response." }; }
+    if(!res.ok || body.ok === false){
+      const err = new Error(body.error || `Request failed (HTTP ${res.status})`);
+      err.partialPages = body.partialPages;
+      err.partialResults = body.partialResults;
+      throw err;
+    }
+    return body;
+  }
+
+  // AI Summary — generated server-side after crawl/test completes. Polls
+  // while "generating" since the AI call itself can take a few seconds;
+  // stops polling once it lands on "done" or "error".
+  let aiPollTimer = null;
+
+  function renderAiSummary(result){
+    const wrap = $("aiSummaryWrap");
+    const body = $("aiSummaryBody");
+    const entries = Array.isArray(result.entries) ? result.entries : [];
+    if(result.status === "idle" && entries.length === 0){
+      wrap.style.display = "none";
+      return;
+    }
+    wrap.style.display = "block";
+
+    // Newest first — the phase someone just ran is the one they want to see
+    // without scrolling, while earlier phases (e.g. the crawl summary) stay
+    // available underneath rather than being overwritten.
+    // Chronological order (oldest first, newest appended at the bottom) —
+    // matches how the downloaded report lists these, so the live view and
+    // the report read the same way.
+    const entriesHtml = entries.map(e => {
+      const when = e.createdAt ? new Date(e.createdAt).toLocaleString() : "";
+      const html = e.html || `<p>${escapeHtml(e.text || "")}</p>`;
+      return `<div class="ai-summary-entry">
+        <div class="ai-summary-entry-head">
+          <span class="ai-summary-phase">${escapeHtml(e.reportType || "AI Summary")}</span>
+          ${when ? `<span class="ai-summary-time">${escapeHtml(when)}</span>` : ""}
+        </div>
+        <div class="ai-summary-html">${html}</div>
+      </div>`;
+    }).join("");
+
+    let statusHtml = "";
+    if(result.status === "generating"){
+      statusHtml = `<div class="ai-summary-entry"><span class="spinner"></span> <span class="ai-summary-status">Generating AI summary…</span></div>`;
+    }else if(result.status === "error"){
+      statusHtml = `<div class="ai-summary-entry">
+        <div class="ai-summary-error">AI summary unavailable: ${escapeHtml(result.error || "unknown error")}</div>
+        ${result.canRetry ? `<button type="button" class="ai-summary-retry-btn" id="aiSummaryRetryBtn">Retry</button>` : ""}
+      </div>`;
+    }
+
+    body.innerHTML = entriesHtml + statusHtml || `<div class="ai-summary-entry"><span class="ai-summary-status">No summary yet.</span></div>`;
+
+    const retryBtn = $("aiSummaryRetryBtn");
+    if(retryBtn) retryBtn.addEventListener("click", retryAiSummary);
+  }
+
+  async function retryAiSummary(){
+    const btn = $("aiSummaryRetryBtn");
+    if(btn){ btn.disabled = true; btn.textContent = "Retrying…"; }
+    try{
+      await api("/api/ai-summary/diff/retry", { method: "POST", body: JSON.stringify({}) });
+    }catch(e){ /* surfaced on the next poll via result.status/error */ }
+    pollAiSummary();
+  }
+
+  async function pollAiSummary(){
+    try{
+      const result = await api("/api/ai-summary/diff");
+      renderAiSummary(result);
+      if(result.status === "generating"){
+        if(!aiPollTimer) aiPollTimer = setInterval(pollAiSummary, 2500);
+      }else if(aiPollTimer){
+        clearInterval(aiPollTimer);
+        aiPollTimer = null;
+      }
+    }catch(e){ /* transient poll failure, ignore */ }
+  }
+
+  function pageRowHtml(idx, p){
+    return `
+      <tr>
+        <td class="idx">${idx}</td>
+        <td class="ptitle">${escapeHtml(p.title)}</td>
+        <td class="ppath"><a href="${escapeHtml(p.url)}" target="_blank" rel="noopener" style="color:inherit;">${escapeHtml(p.path)}</a></td>
+      </tr>`;
+  }
+
+  function renderPanel(slot){
+    const body = slot === "bench" ? $("benchBody") : $("candBody");
+    const pages = state[slot].pages;
+    body.innerHTML = pages.map((p,i)=>pageRowHtml(i+1,p)).join("") || `<tr><td colspan="3"><div class="empty">No pages yet.</div></td></tr>`;
+  }
+
+  function pathMatchCell(p, matched, idx){
+    if(!p){
+      return `<tr class="row-missing"><td class="idx">${idx}</td><td colspan="2" style="color:var(--ink-soft);font-style:italic;">— not found on this site —</td></tr>`;
+    }
+    return `<tr class="${matched ? "row-matched" : "row-unmatched"}">
+      <td class="idx">${idx}</td>
+      <td class="ptitle">${escapeHtml(p.title)}</td>
+      <td class="ppath"><a href="${escapeHtml(p.url)}" target="_blank" rel="noopener" style="color:inherit;">${escapeHtml(p.path)}</a></td>
+    </tr>`;
+  }
+
+  // URL-list mode: pages are compared by POSITION (1st benchmark URL vs 1st
+  // candidate URL, and so on) — paths can be on entirely different domains
+  // with no relationship to each other, so sorting/matching by path would be
+  // meaningless here. Every row up to the shorter list's length is "paired";
+  // anything beyond that has nothing on the other side to compare against.
+  function alignPanelsByPosition(){
+    const benchPages = state.bench.pages;
+    const candPages = state.cand.pages;
+    const maxLen = Math.max(benchPages.length, candPages.length);
+    const pairedLen = Math.min(benchPages.length, candPages.length);
+
+    const benchRows = [];
+    const candRows = [];
+    for(let i = 0; i < maxLen; i++){
+      const paired = i < pairedLen;
+      benchRows.push(pathMatchCell(benchPages[i], paired, i+1));
+      candRows.push(pathMatchCell(candPages[i], paired, i+1));
+    }
+
+    $("benchBody").innerHTML = benchRows.join("") || `<tr><td colspan="3"><div class="empty">No pages yet.</div></td></tr>`;
+    $("candBody").innerHTML = candRows.join("") || `<tr><td colspan="3"><div class="empty">No pages yet.</div></td></tr>`;
+  }
+
+  // Once both sides have (at least partially) crawled, re-render both tables
+  // in a shared, path-sorted order so matching pages land on the same row —
+  // easy to eyeball which paths line up before running the full test.
+  function alignPanels(){
+    if(state.bench.mode === "list"){
+      alignPanelsByPosition();
+      return;
+    }
+    const benchByPath = new Map(state.bench.pages.map(p=>[p.path,p]));
+    const candByPath = new Map(state.cand.pages.map(p=>[p.path,p]));
+    const allPaths = Array.from(new Set([...benchByPath.keys(), ...candByPath.keys()])).sort();
+
+    $("benchBody").innerHTML = allPaths.map((path,i)=>pathMatchCell(benchByPath.get(path), candByPath.has(path), i+1)).join("")
+      || `<tr><td colspan="3"><div class="empty">No pages yet.</div></td></tr>`;
+    $("candBody").innerHTML = allPaths.map((path,i)=>pathMatchCell(candByPath.get(path), benchByPath.has(path), i+1)).join("")
+      || `<tr><td colspan="3"><div class="empty">No pages yet.</div></td></tr>`;
+  }
+
+  function updateDashboard(){
+    $("statBench").textContent = state.bench.pages.length;
+    $("statCand").textContent = state.cand.pages.length;
+    let matched;
+    if(state.bench.mode === "list"){
+      // Position pairing: the Nth benchmark URL always pairs with the Nth
+      // candidate URL, so "matched" is simply how many positions exist on
+      // both sides — path never enters into it.
+      matched = Math.min(state.bench.pages.length, state.cand.pages.length);
+    }else{
+      const candPaths = new Set(state.cand.pages.map(p=>p.path));
+      matched = state.bench.pages.filter(p=>candPaths.has(p.path)).length;
+    }
+    $("statMatched").textContent = matched;
+
+    // Reports are available as soon as both sides have crawled — they don't
+    // need testing to have run (a "crawl only" report is still meaningful).
+    const hasCrawled = state.bench.pages.length > 0 && state.cand.pages.length > 0;
+    $("dlCsv").classList.toggle("disabled", !hasCrawled);
+    $("dlPdf").classList.toggle("disabled", !hasCrawled);
+  }
+
+  function hasInput(slot){
+    const mode = state[slot].mode;
+    if(mode === "list") return $(`${slot}UrlList`).value.trim().length > 0;
+    if(mode === "history") return $(`${slot}HistorySelect`).value.length > 0;
+    return $(`${slot}Url`).value.trim().length > 0;
+  }
+
+  function updateCrawlButtonState(){
+    const mode = state.bench.mode; // bench and cand always share one mode
+    const bothReady = hasInput("bench") && hasInput("cand");
+    if(mode === "list"){
+      $("btnCrawl").disabled = true;
+      $("btnTest").disabled = !bothReady || crawling;
+    }else if(mode === "history"){
+      $("btnCrawl").disabled = true;
+      // History loads are already rendered by the time a selection lands —
+      // gate on actual pages, same as crawl mode, not just a dropdown pick.
+      $("btnTest").disabled = !(state.bench.pages.length > 0 && state.cand.pages.length > 0) || crawling;
+    }else{
+      $("btnCrawl").disabled = !bothReady || crawling;
+      // Testing only needs usable pages on both sides — even a crawl that
+      // errored partway through still left real, checkpointed pages behind,
+      // and those are worth testing rather than throwing the whole run away.
+      $("btnTest").disabled = !(state.bench.pages.length > 0 && state.cand.pages.length > 0) || crawling;
+    }
+  }
+
+  function setBar(slot, pct, mode){
+    const bar = $(slot === "bench" ? "benchBar" : "candBar");
+    bar.style.width = Math.max(0, Math.min(100, pct)) + "%";
+    bar.className = "progress-fill" + (mode ? " " + mode : "");
+  }
+
+  async function pollProgress(slot, statusEl){
+    try{
+      const p = await api(`/api/progress/${slot}`);
+      // Live-fill: as the server checkpoints newly found pages, reflect them
+      // in the table immediately rather than waiting for the whole crawl.
+      if(Array.isArray(p.pages) && p.pages.length !== state[slot].pages.length){
+        state[slot].pages = p.pages;
+        renderPanel(slot);
+        updateDashboard();
+      }
+      if(p.total > 0){
+        const pct = p.status === "done" ? 100 : Math.min(99, Math.round((p.found / p.total) * 100));
+        setBar(slot, pct, p.status === "error" ? "err" : (p.status === "done" ? "done" : ""));
+        if(p.status === "running") statusEl.textContent = `Crawling — ${p.found} of ~${p.total} page(s) rendered…`;
+      } else if(p.status === "running"){
+        statusEl.textContent = "Reading sitemap…";
+      }
+      return p;
+    }catch(e){
+      return null;
+    }
+  }
+
+  async function crawlOne(slot, urlInputId, statusId){
+    const mode = state[slot].mode;
+    const statusEl = $(statusId);
+    setBar(slot, 0, "");
+    state[slot].pages = [];
+    renderPanel(slot);
+    statusEl.textContent = "Starting…";
+    statusEl.className = "status-line";
+
+    const maxPages = parseInt($("maxPages").value, 10) || 500;
+    let body;
+    if(mode === "list"){
+      const urls = parseUrlListText($(`${slot}UrlList`).value);
+      if(urls.length === 0){
+        statusEl.textContent = "Enter at least one URL in the list.";
+        statusEl.className = "status-line err";
+        return false;
+      }
+      body = { mode: "list", urls, maxPages };
+    }else if(mode === "history"){
+      const sel = $(`${slot}HistorySelect`).value;
+      if(!sel){
+        statusEl.textContent = "Select a saved crawl from the list.";
+        statusEl.className = "status-line err";
+        return false;
+      }
+      const [historyType, historyId, historySide] = sel.split(":");
+      body = { mode: "history", historyType, historyId, historySide: historySide || null, maxPages };
+    }else{
+      const url = $(urlInputId).value.trim();
+      if(!url){
+        statusEl.textContent = "Enter a URL first.";
+        statusEl.className = "status-line err";
+        return false;
+      }
+      body = { url, maxPages };
+    }
+
+    const crawlPromise = api(`/api/crawl/${slot}`, { method:"POST", body: JSON.stringify(body) });
+
+    const pollTimer = setInterval(() => pollProgress(slot, statusEl), 700);
+    try{
+      const result = await crawlPromise;
+      state[slot].pages = result.pages;
+      state[slot].invalidCount = result.invalidCount || 0;
+      renderPanel(slot);
+      updateDashboard();
+      setBar(slot, 100, "done");
+      const invalidNote = result.invalidCount ? ` (${result.invalidCount} invalid URL(s) skipped)` : "";
+      const verb = mode === "list" ? "loaded from the list" : "rendered and indexed";
+      statusEl.textContent = `Done — ${result.count} page(s) ${verb}.${invalidNote}`;
+      statusEl.className = "status-line ok";
+      return true;
+    }catch(e){
+      // Don't wipe the panel on failure — keep whatever was checkpointed
+      // before the crawl stalled or errored, since it's still usable.
+      if(e.partialPages && e.partialPages.length){
+        state[slot].pages = e.partialPages;
+        renderPanel(slot);
+        updateDashboard();
+      }
+      setBar(slot, 100, "err");
+      const count = state[slot].pages.length;
+      statusEl.textContent = `Failed: ${e.message}${count ? ` — kept ${count} page(s) found before this happened.` : ""}`;
+      statusEl.className = "status-line err";
+      return false;
+    }finally{
+      clearInterval(pollTimer);
+    }
+  }
+
+  let crawling = false;
+
+  // URL-list mode pairs benchmark[i] with candidate[i] — if the two lists
+  // end up different lengths (pasted that way, or because one side had more
+  // unparseable lines skipped than the other), the extra entries on the
+  // longer side never get tested. Surfacing that plainly beats letting
+  // someone discover it by noticing a shorter-than-expected ledger.
+  function updateListMismatchWarning(){
+    const el = $("listMismatchWarning");
+    if(state.bench.mode !== "list"){
+      el.style.display = "none";
+      return;
+    }
+    const benchLen = state.bench.pages.length;
+    const candLen = state.cand.pages.length;
+    if(benchLen === 0 && candLen === 0){
+      el.style.display = "none";
+      return;
+    }
+    if(benchLen === candLen){
+      el.style.display = "none";
+      return;
+    }
+    const diff = Math.abs(benchLen - candLen);
+    const longer = benchLen > candLen ? "benchmark" : "candidate";
+    const invalidParts = [];
+    if(state.bench.invalidCount) invalidParts.push(`${state.bench.invalidCount} invalid benchmark line(s) skipped`);
+    if(state.cand.invalidCount) invalidParts.push(`${state.cand.invalidCount} invalid candidate line(s) skipped`);
+    const invalidNote = invalidParts.length ? ` This may be because ${invalidParts.join(" and ")}.` : "";
+    el.innerHTML = `<b>List lengths don't match</b> — benchmark has ${benchLen} URL(s), candidate has ${candLen}. Pages are paired by position, so the last ${diff} URL(s) on the ${longer} side won't be paired with anything and will be skipped.${invalidNote}`;
+    el.style.display = "block";
+  }
+
+  async function crawlSites(){
+    if(crawling) return;
+    crawling = true;
+    $("btnCrawl").disabled = true;
+    $("btnTest").disabled = true;
+
+    // Starting a fresh crawl invalidates any previous test results AND any
+    // previously crawled pages on both sides — clear everything immediately,
+    // not just as each side's own crawlOne() happens to begin. Without this,
+    // the candidate panel kept showing the previous run's pages for the
+    // entire time benchmark was (re-)crawling, since crawlOne("cand", ...)
+    // doesn't even start until crawlOne("bench", ...) finishes.
+    state.results = [];
+    renderLedger();
+    closeTestDetailsModal();
+    // Same reasoning as the pages/ledger clear above — without this, the
+    // PREVIOUS run's AI summary sat there the entire time this crawl was in
+    // progress (which can be minutes for a large site), since pollAiSummary()
+    // otherwise only runs again once the whole crawl finishes.
+    renderAiSummary({ status: "idle", entries: [] });
+    $("statGreen").textContent = "–";
+    $("statRed").textContent = "–";
+    $("statAmber").textContent = "–";
+    $("dividerNode").textContent = "·";
+    $("dividerNode").style.color = "";
+    $("testProgress").style.display = "none";
+    setTestBar(0, "");
+    state.bench.pages = [];
+    state.cand.pages = [];
+    renderPanel("bench");
+    renderPanel("cand");
+    updateDashboard();
+    updateListMismatchWarning();
+
+    // Sequential, not parallel: if both URLs are on the same domain, crawling
+    // them at once would double the request rate against that domain — the
+    // exact pattern that trips WAF bot-detection.
+    await crawlOne("bench", "benchUrl", "benchStatus");
+    await crawlOne("cand", "candUrl", "candStatus");
+
+    if(state.bench.pages.length || state.cand.pages.length){
+      alignPanels();
+    }
+    updateListMismatchWarning();
+
+    crawling = false;
+    updateCrawlButtonState();
+    pollAiSummary();
+  }
+
+  function renderLedger(){
+    const pillFor = s => s === "green" ? "Equal" : (s === "red" ? "Changed" : "Links Differ");
+    const arrowCellText = (a, b) => a === b
+      ? escapeHtml(a)
+      : `${escapeHtml(a)} <span style="color:var(--ink-soft);">&rarr;</span> ${escapeHtml(b)}`;
+
+    $("ledgerBody").innerHTML = state.results.map((r,i)=>`
+      <tr class="row-${r.status}">
+        <td class="idx">${i+1}</td>
+        <td class="ptitle">${arrowCellText(r.benchTitle || "(untitled)", r.candTitle || "(untitled)")}</td>
+        <td class="path-cell">
+          ${arrowCellText(r.benchPath, r.candPath)}
+          <a href="${escapeHtml(r.benchUrl)}" target="_blank" rel="noopener">bench ↗</a>
+          <a href="${escapeHtml(r.candUrl)}" target="_blank" rel="noopener">candidate ↗</a>
+        </td>
+        <td><span class="pill">${pillFor(r.status)}</span></td>
+        <td>
+          <div class="detail">${escapeHtml(r.detail)}</div>
+          ${r.broken && r.broken.length ? `<div class="brokenlist">${r.broken.map(escapeHtml).join("<br>")}</div>` : ""}
+          ${r.diffSnippet ? `<div class="diffsnippet">
+            <div><span class="diff-tag bench">bench</span>${escapeHtml(r.diffSnippet.benchSnippet)}</div>
+            <div><span class="diff-tag cand">cand</span>${escapeHtml(r.diffSnippet.candSnippet)}</div>
+          </div>` : ""}
+          ${r.assetDiff ? `<div class="assetdiff">
+            <div class="assetdiff-label">Static assets (CSS/JS) differ:</div>
+            ${(r.assetDiff.onlyInBench||[]).map(a => `<div>&minus; ${escapeHtml(a)}</div>`).join("")}
+            ${(r.assetDiff.onlyInCand||[]).map(a => `<div>+ ${escapeHtml(a)}</div>`).join("")}
+          </div>` : ""}
+        </td>
+        <td class="col-details"><button type="button" class="details-icon-btn" data-details-index="${i}" title="View source diff and layout comparison">&#9432;</button></td>
+      </tr>
+    `).join("") || `<tr><td colspan="6"><div class="empty">No matching paths between the two sites — nothing to compare.</div></td></tr>`;
+
+    const counts = { green:0, red:0, amber:0 };
+    state.results.forEach(r => counts[r.status]++);
+    $("statGreen").textContent = counts.green;
+    $("statRed").textContent = counts.red;
+    $("statAmber").textContent = counts.amber;
+    $("dividerNode").textContent = counts.red > 0 ? "≠" : (counts.amber > 0 ? "≠" : "=");
+    $("dividerNode").style.color = counts.red > 0 ? "var(--red)" : (counts.amber > 0 ? "var(--amber)" : "var(--green)");
+  }
+
+  function setTestBar(pct, mode){
+    const bar = $("testBar");
+    bar.style.width = Math.max(0, Math.min(100, pct)) + "%";
+    bar.className = "progress-fill" + (mode ? " " + mode : "");
+  }
+
+  async function pollTestProgress(){
+    try{
+      const p = await api("/api/test/progress");
+      if(Array.isArray(p.results) && p.results.length !== state.results.length){
+        state.results = p.results;
+        renderLedger();
+      }
+      if(p.total > 0){
+        const pct = p.status === "done" ? 100 : Math.min(99, Math.round((p.done / p.total) * 100));
+        setTestBar(pct, p.status === "error" ? "err" : (p.status === "done" ? "done" : ""));
+        if(p.status === "running") $("testProgress").textContent = `Testing — ${p.done} of ${p.total} matched page(s)…`;
+      }
+      return p;
+    }catch(e){
+      return null;
+    }
+  }
+
+  // ---- Per-pair details modal: source diff + layout screenshots ----
+  // Fetched on demand (see server.js) — not part of the bulk test run, so
+  // opening this is the only time a full page capture/screenshot happens
+  // for that specific pair.
+
+  let testDetailsIndex = null;
+  let testDetailsPollTimer = null;
+
+  function diffLineHtml(row){
+    if(row.type === "same"){
+      return {
+        left: `<div class="diff-line diff-same">${escapeHtml(row.left)}</div>`,
+        right: `<div class="diff-line diff-same">${escapeHtml(row.right)}</div>`,
+      };
+    }
+    if(row.type === "removed"){
+      return {
+        left: `<div class="diff-line diff-removed">${escapeHtml(row.left)}</div>`,
+        right: `<div class="diff-line diff-blank">&nbsp;</div>`,
+      };
+    }
+    return {
+      left: `<div class="diff-line diff-blank">&nbsp;</div>`,
+      right: `<div class="diff-line diff-added">${escapeHtml(row.right)}</div>`,
+    };
+  }
+
+  function renderTestDetailsBodies(result){
+    const sourceEl = $("testDetailsSourceBody");
+    const layoutEl = $("testDetailsLayoutBody");
+
+    if(!result || result.status === "idle"){
+      sourceEl.innerHTML = `<div class="diff-empty-msg">Not requested yet.</div>`;
+      layoutEl.innerHTML = `<div class="diff-empty-msg">Not requested yet.</div>`;
+      return;
+    }
+    if(result.status === "generating"){
+      const loading = `<div class="diff-empty-msg"><span class="spinner"></span> Loading page source and screenshots…</div>`;
+      sourceEl.innerHTML = loading;
+      layoutEl.innerHTML = loading;
+      return;
+    }
+    if(result.status === "error"){
+      const errHtml = `<div class="diff-empty-msg">
+        <div class="ai-summary-error">Could not load page details: ${escapeHtml(result.error || "unknown error")}</div>
+        <button type="button" class="ai-summary-retry-btn test-details-retry-btn">Retry</button>
+      </div>`;
+      sourceEl.innerHTML = errHtml;
+      layoutEl.innerHTML = errHtml;
+      document.querySelectorAll(".test-details-retry-btn").forEach(b => {
+        b.addEventListener("click", () => requestTestPageDetails(testDetailsIndex));
+      });
+      return;
+    }
+
+    // status === "done"
+    if(result.identical){
+      sourceEl.innerHTML = `<div class="diff-empty-msg">Pages are identical — no differences in page source.</div>`;
+    }else{
+      const truncatedNote = result.truncated
+        ? `<div class="diff-truncated-note">One or both pages were too large to compare in full — showing the first portion only.</div>`
+        : "";
+      const leftLines = [];
+      const rightLines = [];
+      (result.diffRows || []).forEach(row => {
+        const h = diffLineHtml(row);
+        leftLines.push(h.left);
+        rightLines.push(h.right);
+      });
+      sourceEl.innerHTML = `${truncatedNote}<div class="diff-columns">
+        <div class="diff-pane"><div class="diff-pane-head">Benchmark</div>${leftLines.join("")}</div>
+        <div class="diff-pane"><div class="diff-pane-head">Candidate</div>${rightLines.join("")}</div>
+      </div>`;
+    }
+
+    const benchImg = result.benchScreenshot
+      ? `<img src="${result.benchScreenshot}" alt="Benchmark page screenshot">`
+      : `<div class="screenshot-error">${escapeHtml(result.benchError || "Screenshot unavailable")}</div>`;
+    const candImg = result.candScreenshot
+      ? `<img src="${result.candScreenshot}" alt="Candidate page screenshot">`
+      : `<div class="screenshot-error">${escapeHtml(result.candError || "Screenshot unavailable")}</div>`;
+    layoutEl.innerHTML = `<div class="screenshot-columns">
+      <div class="screenshot-pane"><div class="screenshot-pane-head">Benchmark</div>${benchImg}</div>
+      <div class="screenshot-pane"><div class="screenshot-pane-head">Candidate</div>${candImg}</div>
+    </div>`;
+  }
+
+  async function pollTestPageDetails(index){
+    try{
+      const result = await api(`/api/test/page-details?index=${encodeURIComponent(index)}`);
+      if(testDetailsIndex !== index) return; // modal closed or switched rows since this poll started
+      renderTestDetailsBodies(result);
+      if(result.status === "generating"){
+        if(!testDetailsPollTimer) testDetailsPollTimer = setInterval(() => pollTestPageDetails(index), 1500);
+      }else if(testDetailsPollTimer){
+        clearInterval(testDetailsPollTimer);
+        testDetailsPollTimer = null;
+      }
+    }catch(e){ /* transient poll failure, ignore */ }
+  }
+
+  async function requestTestPageDetails(index){
+    renderTestDetailsBodies({ status: "generating" });
+    try{
+      await api("/api/test/page-details", { method: "POST", body: JSON.stringify({ index }) });
+    }catch(e){ /* surfaced on the next poll via result.status/error */ }
+    pollTestPageDetails(index);
+  }
+
+  function switchTestDetailsTab(tab){
+    document.querySelectorAll(".modal-tab-btn").forEach(b => b.classList.toggle("active", b.getAttribute("data-tab") === tab));
+    $("testDetailsSourceTab").classList.toggle("active", tab === "source");
+    $("testDetailsLayoutTab").classList.toggle("active", tab === "layout");
+  }
+
+  function openTestDetailsModal(index){
+    const r = state.results[index];
+    if(!r) return;
+    testDetailsIndex = index;
+    const titleText = r.benchTitle === r.candTitle ? (r.benchTitle || "(untitled)") : `${r.benchTitle || "(untitled)"} → ${r.candTitle || "(untitled)"}`;
+    $("testDetailsModalTitle").textContent = titleText;
+    $("testDetailsModalPath").textContent = r.benchPath === r.candPath ? r.benchPath : `${r.benchPath} → ${r.candPath}`;
+    switchTestDetailsTab("source");
+    $("testDetailsModalOverlay").classList.add("open");
+    requestTestPageDetails(index);
+  }
+
+  function closeTestDetailsModal(){
+    testDetailsIndex = null;
+    $("testDetailsModalOverlay").classList.remove("open");
+    if(testDetailsPollTimer){ clearInterval(testDetailsPollTimer); testDetailsPollTimer = null; }
+  }
+
+  $("ledgerBody").addEventListener("click", (e) => {
+    const btn = e.target.closest(".details-icon-btn[data-details-index]");
+    if(!btn) return;
+    openTestDetailsModal(Number(btn.getAttribute("data-details-index")));
+  });
+  $("testDetailsModalCloseBtn").addEventListener("click", closeTestDetailsModal);
+  $("testDetailsModalOverlay").addEventListener("click", (e) => {
+    if(e.target.id === "testDetailsModalOverlay") closeTestDetailsModal();
+  });
+  document.querySelectorAll(".modal-tab-btn").forEach(btn => {
+    btn.addEventListener("click", () => switchTestDetailsTab(btn.getAttribute("data-tab")));
+  });
+  document.addEventListener("keydown", (e) => {
+    if(e.key === "Escape" && $("testDetailsModalOverlay").classList.contains("open")) closeTestDetailsModal();
+  });
+
+  async function startTesting(){
+    // Bring the ledger into view immediately so the person watching doesn't
+    // have to scroll to find out anything is happening.
+    $("ledgerWrap").scrollIntoView({ behavior: "smooth", block: "start" });
+
+    // In URL-list mode there's no separate "Crawl" step to click first — if
+    // either side hasn't been rendered yet, do that now before testing.
+    if(state.bench.mode === "list" && (state.bench.pages.length === 0 || state.cand.pages.length === 0)){
+      $("btnTest").disabled = true;
+      $("btnCrawl").disabled = true;
+      await crawlOne("bench", "benchUrl", "benchStatus");
+      await crawlOne("cand", "candUrl", "candStatus");
+      if(state.bench.pages.length || state.cand.pages.length) alignPanels();
+      updateListMismatchWarning();
+      if(state.bench.pages.length === 0 || state.cand.pages.length === 0){
+        updateCrawlButtonState();
+        return; // rendering failed on at least one side — nothing to test yet
+      }
+    }
+
+    $("btnTest").disabled = true;
+    $("btnCrawl").disabled = true;
+    const progressEl = $("testProgress");
+    progressEl.style.display = "block";
+    progressEl.className = "status-line";
+    progressEl.textContent = "Starting…";
+    setTestBar(0, "");
+    state.results = [];
+    closeTestDetailsModal();
+    $("ledgerBody").innerHTML = `<tr><td colspan="6"><div class="empty">Testing matched pages — results will appear here as they finish…</div></td></tr>`;
+
+    const pollTimer = setInterval(pollTestProgress, 600);
+    try{
+      const result = await api("/api/test", { method:"POST", body: JSON.stringify({}) });
+      state.results = result.results;
+      renderLedger();
+      setTestBar(100, "done");
+      progressEl.textContent = `Done — ${result.results.length} matched page(s) tested.`;
+      progressEl.className = "status-line ok";
+    }catch(e){
+      // Keep whatever was already checked in before the failure — don't
+      // wipe out real results over one late-stage error.
+      if(e.partialResults && e.partialResults.length){
+        state.results = e.partialResults;
+      }
+      renderLedger();
+      setTestBar(100, "err");
+      const count = state.results.length;
+      progressEl.textContent = `Failed: ${e.message}${count ? ` — kept ${count} result(s) from before this happened.` : ""}`;
+      progressEl.className = "status-line err";
+    }finally{
+      clearInterval(pollTimer);
+      $("btnTest").disabled = false;
+      updateCrawlButtonState();
+      pollAiSummary();
+    }
+  }
+
+  $("btnCrawl").addEventListener("click", crawlSites);
+  $("btnTest").addEventListener("click", startTesting);
+  $("maxPages").addEventListener("input", function(){
+    const cleaned = this.value.replace(/[^0-9]/g, "");
+    this.value = cleaned;
+    this.classList.toggle("invalid", cleaned.length === 0);
+  });
+  $("benchUrl").addEventListener("input", updateCrawlButtonState);
+  $("candUrl").addEventListener("input", updateCrawlButtonState);
+  $("benchUrl").addEventListener("keydown", e=>{ if(e.key==="Enter" && !$("btnCrawl").disabled) $("btnCrawl").click(); });
+  $("candUrl").addEventListener("keydown", e=>{ if(e.key==="Enter" && !$("btnCrawl").disabled) $("btnCrawl").click(); });
+  $("benchUrlList").addEventListener("input", () => { updateCrawlButtonState(); previewListMode("bench"); });
+  $("candUrlList").addEventListener("input", () => { updateCrawlButtonState(); previewListMode("cand"); });
+  setupModeToggle("bench");
+  setupModeToggle("cand");
+  setupFileUpload("bench");
+  setupFileUpload("cand");
+  setupHistorySelect("bench");
+  setupHistorySelect("cand");
+  pollAiSummary();
+
+})();
+</script>
+</body>
+</html>

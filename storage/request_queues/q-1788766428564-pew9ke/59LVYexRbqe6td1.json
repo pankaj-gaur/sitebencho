@@ -1,0 +1,9 @@
+{
+	"id": "59LVYexRbqe6td1",
+	"json": "{\"id\":\"59LVYexRbqe6td1\",\"url\":\"https://contentbloom.com/blog/category/amazon/\",\"uniqueKey\":\"https://contentbloom.com/blog/category/amazon\",\"method\":\"GET\",\"noRetry\":false,\"retryCount\":0,\"errorMessages\":[],\"headers\":{},\"userData\":{\"__crawlee\":{\"crawlDepth\":1,\"enqueueStrategy\":\"same-domain\"}}}",
+	"method": "GET",
+	"orderNo": 1788766441906,
+	"retryCount": 0,
+	"uniqueKey": "https://contentbloom.com/blog/category/amazon",
+	"url": "https://contentbloom.com/blog/category/amazon/"
+}

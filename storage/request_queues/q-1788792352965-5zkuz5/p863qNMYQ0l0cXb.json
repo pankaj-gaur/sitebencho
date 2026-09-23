@@ -1,0 +1,9 @@
+{
+	"id": "p863qNMYQ0l0cXb",
+	"json": "{\"id\":\"p863qNMYQ0l0cXb\",\"url\":\"https://contentbloom.com/blog/category/dotcms/\",\"uniqueKey\":\"https://contentbloom.com/blog/category/dotcms\",\"method\":\"GET\",\"noRetry\":false,\"retryCount\":0,\"errorMessages\":[],\"headers\":{},\"userData\":{\"__crawlee\":{\"crawlDepth\":1,\"enqueueStrategy\":\"same-domain\"}}}",
+	"method": "GET",
+	"orderNo": 1788792367034,
+	"retryCount": 0,
+	"uniqueKey": "https://contentbloom.com/blog/category/dotcms",
+	"url": "https://contentbloom.com/blog/category/dotcms/"
+}

@@ -1,0 +1,9 @@
+{
+	"id": "yhEIbjSUEeX844V",
+	"json": "{\"id\":\"yhEIbjSUEeX844V\",\"url\":\"https://contentbloom.com/blog/personalization-vs-key-account-management-the-role-of-digital-in-account-driven-b2b-business/\",\"loadedUrl\":\"https://contentbloom.com/blog/personalization-vs-key-account-management-the-role-of-digital-in-account-driven-b2b-business/\",\"uniqueKey\":\"https://contentbloom.com/blog/personalization-vs-key-account-management-the-role-of-digital-in-account-driven-b2b-business\",\"method\":\"GET\",\"noRetry\":false,\"retryCount\":1,\"errorMessages\":[\"page.title: Target page, context or browser has been closed\\n    at PlaywrightCrawler.requestHandler (C:\\\\Projects\\\\Site Diff Inspector\\\\site-diff-inspector\\\\crawler.js:165:35)\\n    at async wrap (C:\\\\Projects\\\\Site Diff Inspector\\\\site-diff-inspector\\\\node_modules\\\\@apify\\\\timeout\\\\cjs\\\\index.cjs:56:21)\"],\"headers\":{},\"userData\":{\"__crawlee\":{\"state\":5}}}",
+	"method": "GET",
+	"orderNo": 1788796095545,
+	"retryCount": 1,
+	"uniqueKey": "https://contentbloom.com/blog/personalization-vs-key-account-management-the-role-of-digital-in-account-driven-b2b-business",
+	"url": "https://contentbloom.com/blog/personalization-vs-key-account-management-the-role-of-digital-in-account-driven-b2b-business/"
+}

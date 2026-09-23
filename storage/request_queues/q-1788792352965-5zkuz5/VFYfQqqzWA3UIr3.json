@@ -1,0 +1,9 @@
+{
+	"id": "VFYfQqqzWA3UIr3",
+	"json": "{\"id\":\"VFYfQqqzWA3UIr3\",\"url\":\"https://contentbloom.com/blog/category/java/\",\"uniqueKey\":\"https://contentbloom.com/blog/category/java\",\"method\":\"GET\",\"noRetry\":false,\"retryCount\":0,\"errorMessages\":[],\"headers\":{},\"userData\":{\"__crawlee\":{\"crawlDepth\":1,\"enqueueStrategy\":\"same-domain\"}}}",
+	"method": "GET",
+	"orderNo": 1788792367072,
+	"retryCount": 0,
+	"uniqueKey": "https://contentbloom.com/blog/category/java",
+	"url": "https://contentbloom.com/blog/category/java/"
+}

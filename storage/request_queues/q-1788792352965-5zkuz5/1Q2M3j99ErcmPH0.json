@@ -1,0 +1,9 @@
+{
+	"id": "1Q2M3j99ErcmPH0",
+	"json": "{\"id\":\"1Q2M3j99ErcmPH0\",\"url\":\"https://contentbloom.com/blog/category/front-end/\",\"uniqueKey\":\"https://contentbloom.com/blog/category/front-end\",\"method\":\"GET\",\"noRetry\":false,\"retryCount\":0,\"errorMessages\":[],\"headers\":{},\"userData\":{\"__crawlee\":{\"crawlDepth\":1,\"enqueueStrategy\":\"same-domain\"}}}",
+	"method": "GET",
+	"orderNo": 1788792367060,
+	"retryCount": 0,
+	"uniqueKey": "https://contentbloom.com/blog/category/front-end",
+	"url": "https://contentbloom.com/blog/category/front-end/"
+}

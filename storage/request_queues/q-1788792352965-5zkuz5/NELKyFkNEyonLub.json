@@ -1,0 +1,9 @@
+{
+	"id": "NELKyFkNEyonLub",
+	"json": "{\"id\":\"NELKyFkNEyonLub\",\"url\":\"https://contentbloom.com/blog/category/managed-services/\",\"uniqueKey\":\"https://contentbloom.com/blog/category/managed-services\",\"method\":\"GET\",\"noRetry\":false,\"retryCount\":0,\"errorMessages\":[],\"headers\":{},\"userData\":{\"__crawlee\":{\"crawlDepth\":1,\"enqueueStrategy\":\"same-domain\"}}}",
+	"method": "GET",
+	"orderNo": 1788792367080,
+	"retryCount": 0,
+	"uniqueKey": "https://contentbloom.com/blog/category/managed-services",
+	"url": "https://contentbloom.com/blog/category/managed-services/"
+}

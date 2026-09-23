@@ -1,0 +1,9 @@
+{
+	"id": "LI4bJ2Fgu8LK3nL",
+	"json": "{\"id\":\"LI4bJ2Fgu8LK3nL\",\"url\":\"https://contentbloom.com/blog/sitecore-exm-is-the-ultimate-email-tool-for-enterprise-marketing/\",\"uniqueKey\":\"https://contentbloom.com/blog/sitecore-exm-is-the-ultimate-email-tool-for-enterprise-marketing\",\"method\":\"GET\",\"noRetry\":false,\"retryCount\":1,\"errorMessages\":[\"Error: browserController.newPage() failed: uxdFwNTw0X4Ze_DUae6er\\nCause:browserContext.newPage: Target page, context or browser has been closed.\\n    at BrowserPool._createPageForBrowser (C:\\\\Projects\\\\Site Diff Inspector\\\\site-diff-inspector\\\\node_modules\\\\@crawlee\\\\browser-pool\\\\browser-pool.js:413:19)\\n    at async C:\\\\Projects\\\\Site Diff Inspector\\\\site-diff-inspector\\\\node_modules\\\\@crawlee\\\\browser-pool\\\\browser-pool.js:303:20\"],\"headers\":{},\"userData\":{\"__crawlee\":{\"state\":5}}}",
+	"method": "GET",
+	"orderNo": 1788766717562,
+	"retryCount": 1,
+	"uniqueKey": "https://contentbloom.com/blog/sitecore-exm-is-the-ultimate-email-tool-for-enterprise-marketing",
+	"url": "https://contentbloom.com/blog/sitecore-exm-is-the-ultimate-email-tool-for-enterprise-marketing/"
+}

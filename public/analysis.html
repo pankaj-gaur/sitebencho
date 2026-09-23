@@ -1,0 +1,1760 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Site Analysis</title>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;1,400&amp;family=Roboto:wght@400;500;700;800;900&amp;display=swap" rel="stylesheet"/>
+<script src="https://unpkg.com/lucide@latest"></script>
+<style>
+  :root {
+    --cb-ink: #151515;
+    --cb-ink-soft: #363636;
+    --cb-white: #ffffff;
+    --cb-canvas: #f5f4f0;
+    --cb-surface: #eeece6;
+    --cb-muted: #737373;
+    --cb-border: #d8d6cf;
+    --cb-border-strong: #c2bfb6;
+    --line: #d8d6cf;
+    --line-strong: #c2bfb6;
+    --panel: #ffffff;
+    --cb-accent: #0085B2;
+    --cb-accent-strong: #00739c;
+    --cb-dark: #111111;
+
+    --green: #236338;
+    --green-soft: #e3efe6;
+    --red: #a32d26;
+    --red-soft: #f7e6e4;
+    --amber: #945815;
+    --amber-soft: #fbf0df;
+
+    --radius-sm: 4px;
+    --radius-md: 8px;
+    --radius-lg: 14px;
+    --radius-pill: 999px;
+
+    --shadow-sm: 0 1px 3px rgba(21, 21, 21, 0.05);
+    --shadow-md: 0 12px 32px rgba(21, 21, 21, 0.08);
+    --shadow-lg: 0 20px 48px rgba(21, 21, 21, 0.16);
+
+    --font-body: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+    --font-display: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+    --font-mono: 'IBM Plex Mono', ui-monospace, Menlo, Consolas, monospace;
+    --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    padding: 0;
+    background: var(--cb-canvas);
+    color: var(--cb-ink);
+    font-family: var(--font-body);
+    font-size: 14px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+  }
+
+  h1, h2, h3, h4, h5, h6, label, button, input, select, textarea, th, td, p, span, a, div {
+    font-family: var(--font-body);
+  }
+
+  code, pre, .mono, input[type=text], textarea, select, .ppath, .score-badge, .vital-value, .rec-savings, .status-line, .ai-summary-time, .idx {
+    font-family: var(--font-mono);
+  }
+
+  svg.lucide {
+    width: 15px;
+    height: 15px;
+    vertical-align: -2px;
+    display: inline-block;
+  }
+
+  .site-wrap {
+    max-width: 1320px;
+    margin: 0 auto;
+    padding: 32px 24px 64px;
+  }
+
+  /* Header & Navigation */
+  .cb-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--cb-border);
+    margin-bottom: 28px;
+    flex-wrap: wrap;
+  }
+  .brand-badge {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .brand-logo-mark {
+    width: 28px;
+    height: 28px;
+    background: var(--cb-ink);
+    color: #c7d92f;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-family: var(--font-body);
+    border-radius: var(--radius-sm);
+    font-size: 15px;
+    letter-spacing: -0.05em;
+  }
+  .brand-name {
+    font-family: var(--font-body);
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--cb-ink);
+  }
+  .brand-tag {
+    font-family: var(--font-body);
+    font-size: 11px;
+    color: var(--cb-muted);
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    padding-left: 8px;
+    border-left: 1px solid var(--cb-border);
+  }
+
+  .nav {
+    display: inline-flex;
+    background: var(--cb-white);
+    border: 1px solid var(--cb-border);
+    border-radius: var(--radius-pill);
+    padding: 4px;
+    box-shadow: var(--shadow-sm);
+  }
+  .nav a {
+    font-family: var(--font-body);
+    font-size: 11.5px;
+    font-weight: 700;
+    color: var(--cb-ink-soft);
+    text-decoration: none;
+    padding: 7px 18px;
+    border-radius: var(--radius-pill);
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    transition: all 0.18s var(--ease);
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .nav a.active {
+    background: var(--cb-ink);
+    color: var(--cb-white);
+  }
+  .nav a:hover:not(.active) {
+    background: var(--cb-surface);
+    color: var(--cb-ink);
+  }
+
+  /* Masthead */
+  .masthead { margin-bottom: 24px; }
+  .cb-eyebrow {
+    font-family: var(--font-body);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--cb-ink-soft);
+    margin: 0 0 10px;
+  }
+  .cb-eyebrow::after { content: "→"; font-size: 13px; }
+  .masthead h1 {
+    font-family: var(--font-body);
+    font-size: clamp(26px, 3.2vw, 42px);
+    font-weight: 800;
+    line-height: 1.05;
+    letter-spacing: -0.035em;
+    color: var(--cb-ink);
+    margin: 0 0 12px;
+  }
+  .masthead .sub {
+    font-family: var(--font-body);
+    font-size: 14.5px;
+    color: var(--cb-ink-soft);
+    max-width: 880px;
+    line-height: 1.6;
+  }
+
+  .note {
+    font-family: var(--font-body);
+    background: var(--cb-white);
+    border: 1px solid var(--cb-border);
+    border-left: 4px solid #EF5E58;
+    border-radius: var(--radius-md);
+    padding: 14px 18px;
+    font-size: 12.5px;
+    color: var(--cb-ink-soft);
+    line-height: 1.6;
+    margin-bottom: 24px;
+    box-shadow: var(--shadow-sm);
+  }
+  .note b { color: var(--cb-ink); font-weight: 700; }
+
+  /* Toolbar */
+  .toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 18px;
+    flex-wrap: wrap;
+  }
+  .pages-field {
+    border-radius: var(--radius-pill);
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    border: 1px solid var(--cb-border);
+    background: var(--cb-white);
+    padding: 6px 14px 6px 16px;
+    box-shadow: var(--shadow-sm);
+  }
+  .pages-field span {
+    font-family: var(--font-body);
+    font-size: 11.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--cb-ink-soft);
+    white-space: nowrap;
+  }
+  .pages-field input {
+    border-radius: var(--radius-sm);
+    font-family: var(--font-mono);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--cb-ink);
+    width: 68px;
+    text-align: center;
+    padding: 5px 4px;
+    border: 1px solid var(--cb-border);
+    background: var(--cb-canvas);
+  }
+  .pages-field input:focus {
+    outline: 2px solid var(--cb-ink);
+    outline-offset: -1px;
+    background: #fff;
+  }
+  .pages-field input.invalid {
+    border-color: var(--red);
+    outline: 2px solid var(--red);
+  }
+
+  /* Metric KPI Dashboard Single-Row Strip */
+  .dash {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    align-items: stretch !important;
+    width: 100% !important;
+    background: var(--panel) !important;
+    border: 1px solid var(--line-strong) !important;
+    border-radius: var(--radius-md) !important;
+    overflow: hidden !important;
+    margin-bottom: 22px !important;
+    box-shadow: var(--shadow-sm);
+  }
+  .dash .stat {
+    flex: 1 1 0 !important;
+    min-width: 0 !important;
+    padding: 14px 18px !important;
+    border-right: 1px solid var(--line) !important;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  .dash .stat:last-child {
+    border-right: none !important;
+  }
+  .dash .stat .num {
+    font-family: var(--font-body);
+    font-size: 30px;
+    font-weight: 800;
+    line-height: 1;
+    color: var(--cb-ink);
+    letter-spacing: -0.04em;
+  }
+  .dash .stat .lbl {
+    font-family: var(--font-body);
+    font-size: 11.5px;
+    font-weight: 600;
+    color: var(--cb-muted);
+    margin-top: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .dash .stat.green .num { color: var(--green); }
+  .dash .stat.red .num { color: var(--red); }
+
+  /* Buttons */
+  button.primary {
+    transition: transform 0.18s var(--ease), background 0.18s var(--ease), box-shadow 0.18s ease;
+    border-radius: var(--radius-pill);
+    font-family: var(--font-body);
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: 0.03em;
+    color: #ffffff;
+    background: #0085B2;
+    border: 1px solid #0085B2;
+    padding: 10px 20px;
+    cursor: pointer;
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+  button.primary:hover:not(:disabled) {
+    background: var(--cb-accent-strong);
+    border-color: var(--cb-accent-strong);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 133, 178, 0.35);
+  }
+  button.primary:disabled {
+    background: #e2dfd5;
+    color: #a39e8d;
+    border-color: #d8d6cf;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
+
+  .report-links {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    align-items: center;
+  }
+  .report-link {
+    border-radius: var(--radius-pill);
+    font-family: var(--font-body);
+    font-weight: 700;
+    font-size: 11.5px;
+    color: var(--cb-ink);
+    background: var(--cb-white);
+    text-decoration: none;
+    border: 1px solid var(--cb-border);
+    padding: 7px 15px;
+    white-space: nowrap;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    transition: all 0.15s ease;
+    box-shadow: var(--shadow-sm);
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .report-link:hover:not(.disabled) {
+    background: #0085B2;
+    color: var(--cb-white);
+    border-color: #0085B2;
+  }
+  .report-link.disabled {
+    color: #a39e8d;
+    border-color: #d8d6cf;
+    background: #e2dfd5;
+    pointer-events: none;
+    box-shadow: none;
+    cursor: not-allowed;
+  }
+
+  /* Control Panel */
+  .control-card {
+    box-shadow: var(--shadow-sm);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--cb-border);
+    background: var(--cb-white);
+    padding: 20px 24px;
+    margin-bottom: 24px;
+  }
+  .mode-toggle {
+    border-radius: var(--radius-pill);
+    display: inline-flex;
+    margin-bottom: 14px;
+    border: 1px solid var(--cb-border);
+    background: var(--cb-surface);
+    padding: 2px;
+    width: fit-content;
+  }
+  .mode-toggle button {
+    font-family: var(--font-body);
+    font-size: 11.5px;
+    font-weight: 700;
+    color: var(--cb-ink-soft);
+    background: transparent;
+    border: none;
+    padding: 6px 14px;
+    border-radius: var(--radius-pill);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .mode-toggle button.active {
+    background: var(--cb-ink);
+    color: var(--cb-white);
+  }
+  .mode-toggle button:hover:not(.active) {
+    color: var(--cb-ink);
+    background: rgba(0,0,0,0.05);
+  }
+
+  .controls {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+  }
+  #siteUrl { flex: 1; min-width: 260px; }
+  input[type=text] {
+    border-radius: var(--radius-sm);
+    font-family: var(--font-mono);
+    font-size: 13px;
+    padding: 10px 14px;
+    border: 1px solid var(--cb-border);
+    background: var(--cb-canvas);
+    color: var(--cb-ink);
+    transition: all 0.15s ease;
+  }
+  input[type=text]:focus {
+    outline: 2px solid var(--cb-ink);
+    outline-offset: -1px;
+    background: #fff;
+  }
+
+  .url-list-wrap { margin-bottom: 14px; }
+  .url-list-wrap textarea {
+    border-radius: var(--radius-sm);
+    width: 100%;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    padding: 10px 12px;
+    border: 1px solid var(--cb-border);
+    background: var(--cb-canvas);
+    color: var(--cb-ink);
+    resize: vertical;
+    min-height: 86px;
+    line-height: 1.5;
+  }
+  .url-list-wrap textarea:focus {
+    outline: 2px solid var(--cb-ink);
+    outline-offset: -1px;
+    background: #fff;
+  }
+  .url-list-wrap .file-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 6px;
+    font-size: 11.5px;
+    color: var(--cb-muted);
+  }
+  .url-list-wrap input[type=file] { font-family: var(--font-body); font-size: 11.5px; }
+
+  .history-select-wrap { margin-bottom: 14px; }
+  .history-select-wrap select {
+    border-radius: var(--radius-sm);
+    width: 100%;
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    padding: 10px 12px;
+    border: 1px solid var(--cb-border);
+    background: var(--cb-canvas);
+    color: var(--cb-ink);
+  }
+  .history-select-wrap select:focus {
+    outline: 2px solid var(--cb-ink);
+    outline-offset: -1px;
+  }
+
+  .progress-track {
+    height: 4px;
+    background: var(--cb-surface);
+    overflow: hidden;
+    border-radius: 2px;
+    margin-bottom: 8px;
+  }
+  .progress-fill {
+    height: 100%;
+    width: 0%;
+    background: var(--cb-ink);
+    transition: width 0.25s ease;
+  }
+  .progress-fill.done { background: var(--green); }
+  .progress-fill.err { background: var(--red); }
+
+  .status-line {
+    font-size: 12px;
+    color: var(--cb-muted);
+    font-family: var(--font-mono);
+    margin-bottom: 12px;
+  }
+  .status-line.err { color: var(--red); }
+  .status-line.ok { color: var(--green); }
+
+  /* AI Summary Section */
+  .ai-summary-wrap {
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--cb-border);
+    background: var(--cb-white);
+    margin-bottom: 24px;
+  }
+  .ai-summary-head {
+    font-family: var(--font-body);
+    font-size: 12px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--cb-ink);
+    padding: 12px 20px;
+    border-bottom: 1px solid var(--cb-border);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--cb-surface);
+  }
+  .ai-summary-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--cb-ink);
+    color: #c7d92f;
+    font-size: 11px;
+    line-height: 1;
+  }
+  .ai-summary-body { padding: 0; }
+  .ai-summary-entry {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--cb-border);
+  }
+  .ai-summary-entry:last-child { border-bottom: none; }
+  .ai-summary-entry-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 8px;
+    flex-wrap: wrap;
+  }
+  .ai-summary-phase {
+    font-family: var(--font-body);
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--cb-ink-soft);
+  }
+  .ai-summary-time {
+    font-size: 11px;
+    color: var(--cb-muted);
+    font-family: var(--font-mono);
+  }
+  .ai-summary-html {
+    font-family: var(--font-body);
+    font-size: 13.5px;
+    line-height: 1.65;
+    color: var(--cb-ink);
+  }
+  .ai-summary-html p { margin: 0 0 8px; }
+  .ai-summary-html p:last-child { margin-bottom: 0; }
+  .ai-summary-html ul, .ai-summary-html ol { margin: 0 0 8px 20px; padding: 0; }
+  .ai-summary-html li { margin-bottom: 4px; }
+  .ai-summary-error { color: var(--red); font-size: 12.5px; font-weight: 500; font-family: var(--font-body); }
+  .ai-summary-retry-btn {
+    font-family: var(--font-body);
+    font-weight: 700;
+    font-size: 11.5px;
+    color: var(--red);
+    background: transparent;
+    border: 1px solid var(--red);
+    border-radius: var(--radius-pill);
+    padding: 4px 12px;
+    cursor: pointer;
+    margin-top: 8px;
+  }
+  .ai-summary-retry-btn:hover:not(:disabled) { background: var(--red); color: #fff; }
+  .ai-summary-status { font-family: var(--font-mono); font-size: 12px; color: var(--cb-muted); }
+  .spinner {
+    display: inline-block;
+    width: 13px;
+    height: 13px;
+    border: 2px solid var(--cb-border);
+    border-top-color: var(--cb-ink);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    vertical-align: middle;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Analysis Table */
+  .table-wrap {
+    box-shadow: var(--shadow-sm);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--cb-border);
+    background: var(--cb-white);
+    overflow: hidden;
+  }
+  table { width: 100%; border-collapse: collapse; font-family: var(--font-body); }
+  thead th {
+    text-align: left;
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--cb-ink-soft);
+    font-weight: 700;
+    padding: 12px 14px;
+    border-bottom: 2px solid var(--cb-ink);
+    background: var(--cb-surface);
+    font-family: var(--font-body);
+  }
+  tbody td {
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--cb-border);
+    vertical-align: middle;
+    font-size: 13px;
+    font-family: var(--font-body);
+  }
+  tbody tr:hover { background: rgba(0, 133, 178, 0.08); }
+  .idx { font-family: var(--font-mono); color: var(--cb-muted); width: 34px; }
+  .ptitle { font-weight: 600; color: var(--cb-ink); font-family: var(--font-body); }
+  .ppath { font-family: var(--font-mono); font-size: 11.5px; color: var(--cb-muted); word-break: break-all; }
+  .ppath a { color: inherit; text-decoration: none; border-bottom: 1px dotted var(--cb-border-strong); }
+  .ppath a:hover { color: var(--cb-ink); border-bottom-color: var(--cb-ink); }
+  .empty { padding: 36px 16px; text-align: center; color: var(--cb-muted); font-size: 13px; font-family: var(--font-body); }
+  .col-status { width: 160px; }
+  .col-perf { width: 120px; }
+  .col-details { width: 70px; text-align: center; }
+
+  .details-icon-btn {
+    border-radius: var(--radius-pill);
+    background: transparent;
+    border: 1px solid var(--cb-border);
+    cursor: pointer;
+    font-size: 14px;
+    color: var(--cb-ink);
+    padding: 4px 8px;
+    line-height: 1;
+    transition: all 0.15s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .details-icon-btn:hover:not(:disabled) {
+    background: #0085B2;
+    color: var(--cb-white);
+    border-color: #0085B2;
+  }
+  .details-icon-btn:disabled { color: #a39e8d; border-color: #d8d6cf; cursor: not-allowed; background: #e2dfd5; }
+
+  .pill {
+    border-radius: var(--radius-pill);
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 3px 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-family: var(--font-body);
+  }
+  .pill-green { background: var(--green-soft); color: var(--green); }
+  .pill-red { background: var(--red-soft); color: var(--red); }
+  .pill-dim { background: transparent; color: var(--cb-muted); font-weight: 500; text-transform: none; }
+
+  .score-badge {
+    border-radius: var(--radius-pill);
+    display: inline-block;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-weight: 700;
+    padding: 2px 8px;
+    min-width: 32px;
+    text-align: center;
+  }
+  .score-good { background: var(--green-soft); color: var(--green); }
+  .score-mid { background: var(--amber-soft); color: var(--amber); }
+  .score-poor { background: var(--red-soft); color: var(--red); }
+  .score-na { color: var(--cb-muted); font-family: var(--font-mono); font-size: 11px; }
+  .perf-pair { display: flex; flex-direction: column; gap: 4px; align-items: flex-start; }
+
+  .broken-detail {
+    border-radius: var(--radius-sm);
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    color: var(--red);
+    background: var(--red-soft);
+    padding: 6px 8px;
+    margin-top: 4px;
+    line-height: 1.5;
+    word-break: break-all;
+    max-width: 440px;
+  }
+
+  /* Modal Overlay */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(17, 17, 17, 0.72);
+    backdrop-filter: blur(4px);
+    z-index: 2000;
+    align-items: center;
+    justify-content: center;
+    padding: 32px 20px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+  .modal-overlay.open {
+    display: flex;
+    animation: modalFadeIn 0.2s var(--ease);
+  }
+  @keyframes modalFadeIn {
+    from { opacity: 0; transform: scale(0.98); }
+    to { opacity: 1; transform: scale(1); }
+  }
+
+  .modal-box {
+    border-radius: var(--radius-lg);
+    background: var(--cb-white);
+    border: 1px solid var(--cb-border);
+    max-width: 1180px;
+    width: 100%;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: var(--shadow-lg);
+    overflow: hidden;
+  }
+  .modal-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+    padding: 20px 28px;
+    border-bottom: 2px solid var(--cb-ink);
+    background: var(--cb-white);
+    flex-shrink: 0;
+  }
+  .modal-head h2 {
+    font-family: var(--font-body);
+    font-size: 20px;
+    margin: 0 0 4px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--cb-ink);
+  }
+  .modal-head .modal-subtitle {
+    font-size: 12px;
+    font-family: var(--font-mono);
+    color: var(--cb-muted);
+    word-break: break-all;
+  }
+  .modal-close-btn {
+    border-radius: var(--radius-pill);
+    background: var(--cb-surface);
+    border: 1px solid var(--cb-border);
+    font-family: var(--font-body);
+    font-size: 12px;
+    font-weight: 700;
+    padding: 6px 14px;
+    cursor: pointer;
+    color: var(--cb-ink);
+    flex-shrink: 0;
+    transition: all 0.15s ease;
+  }
+  .modal-close-btn:hover {
+    background: var(--cb-ink);
+    color: var(--cb-white);
+    border-color: var(--cb-ink);
+  }
+
+  .modal-columns {
+    display: grid;
+    grid-template-columns: 1fr 1.2fr 1fr;
+    gap: 0;
+    overflow-y: auto;
+    flex: 1 1 auto;
+    background: var(--cb-canvas);
+  }
+  .modal-col {
+    padding: 22px 24px;
+    border-right: 1px solid var(--cb-border);
+    min-height: 240px;
+    overflow-y: auto;
+    background: var(--cb-white);
+  }
+  .modal-col:last-child { border-right: none; }
+  .modal-col-head {
+    font-family: var(--font-body);
+    font-size: 11.5px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--cb-ink);
+    margin-bottom: 16px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--cb-border);
+  }
+
+  .modal-columns::-webkit-scrollbar,
+  .modal-col::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  .modal-columns::-webkit-scrollbar-track,
+  .modal-col::-webkit-scrollbar-track {
+    background: var(--cb-surface);
+  }
+  .modal-columns::-webkit-scrollbar-thumb,
+  .modal-col::-webkit-scrollbar-thumb {
+    background: var(--cb-border-strong);
+    border-radius: 4px;
+  }
+
+  @media (max-width: 900px) {
+    .modal-columns { grid-template-columns: 1fr; }
+    .modal-col { border-right: none; border-bottom: 1px solid var(--cb-border); max-height: 40vh; }
+  }
+
+  .vitals-table { width: 100%; border-collapse: collapse; font-size: 12.5px; font-family: var(--font-body); }
+  .vitals-table th {
+    text-align: left;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--cb-muted);
+    font-weight: 700;
+    padding: 6px 8px;
+    border-bottom: 1px solid var(--cb-border);
+    font-family: var(--font-body);
+  }
+  .vitals-table td { padding: 8px; border-bottom: 1px solid #f0eee8; font-family: var(--font-body); }
+  .vitals-table td.vital-metric { font-weight: 600; color: var(--cb-ink); }
+  .vital-value {
+    border-radius: var(--radius-sm);
+    font-family: var(--font-mono);
+    font-weight: 700;
+    font-size: 11.5px;
+    padding: 3px 8px;
+    display: inline-block;
+  }
+  .vital-good { background: var(--green-soft); color: var(--green); }
+  .vital-mid { background: var(--amber-soft); color: var(--amber); }
+  .vital-poor { background: var(--red-soft); color: var(--red); }
+  .vital-na { color: var(--cb-muted); font-family: var(--font-mono); }
+
+  .rec-group-label {
+    font-family: var(--font-body);
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--cb-ink-soft);
+    margin: 16px 0 8px;
+  }
+  .rec-group-label:first-child { margin-top: 0; }
+  .rec-card {
+    border-radius: var(--radius-md);
+    border: 1px solid var(--cb-border);
+    background: var(--cb-canvas);
+    padding: 12px 14px;
+    margin-bottom: 10px;
+    font-size: 12.5px;
+    font-family: var(--font-body);
+    transition: box-shadow 0.15s ease;
+  }
+  .rec-card .rec-title { font-weight: 700; color: var(--cb-ink); margin-bottom: 4px; font-family: var(--font-body); }
+  .rec-card .rec-desc { color: var(--cb-ink-soft); font-size: 11.5px; line-height: 1.5; font-family: var(--font-body); }
+  .rec-card .rec-savings { font-family: var(--font-mono); font-size: 11px; font-weight: 600; color: #475a13; margin-top: 6px; }
+  .rec-empty { font-size: 12.5px; color: var(--cb-muted); font-style: italic; padding: 8px 0; font-family: var(--font-body); }
+
+  .forecast-html { font-family: var(--font-body); font-size: 13px; line-height: 1.65; color: var(--cb-ink); }
+  .forecast-html p { margin: 0 0 10px; }
+  .forecast-html p:last-child { margin-bottom: 0; }
+  .forecast-html ul, .forecast-html ol { margin: 0 0 10px 18px; padding: 0; }
+  .forecast-html li { margin-bottom: 4px; }
+  .forecast-html strong { color: var(--cb-ink); }
+</style>
+</head>
+<body>
+<div class="site-wrap">
+<!-- Header -->
+<header class="cb-header">
+<div class="brand-badge">
+<div class="brand-logo-mark">CB</div>
+<div>
+<span class="brand-name">Content Bloom</span>
+<span class="brand-tag">Quality Engineering</span>
+</div>
+</div>
+<div class="toolbar" style="margin-bottom:0;">
+<nav aria-label="Primary navigation" class="nav">
+<a href="index.html"><i data-lucide="layers"></i> Diff Inspector</a>
+<a class="active" href="analysis.html"><i data-lucide="activity"></i> Site Analysis</a>
+<a href="history.html"><i data-lucide="history"></i> History</a>
+</nav>
+<label class="pages-field">
+<span>Max Pages to Scan</span>
+<input id="maxPages" inputmode="numeric" type="text" value="200"/>
+</label>
+</div>
+</header>
+<!-- Masthead -->
+<div class="masthead">
+<p class="cb-eyebrow">Performance &amp; Link Diagnostics</p>
+<h1>Site Analysis</h1>
+<div class="sub">Crawls a web property, inventories every page route, evaluates hyperlinks for broken destinations, and scores core performance using Google Lighthouse audits across mobile and desktop profiles.</div>
+</div>
+<div class="note">
+    Link scanning and Lighthouse run <b>per page, sequentially</b> — each cell provides real-time status indicators as each target finishes. Lighthouse evaluates both mobile and desktop profiles (2 audits per route) with simulated throttling (~10–20s each). Prefer checking specific routes? Switch to <b>Use a URL list</b> below to bypass recursive crawling.
+  </div>
+<!-- KPI Dashboard -->
+<div class="dash">
+<div class="stat"><div class="num" id="statTotal">0</div><div class="lbl"><i data-lucide="file-text"></i> Pages found</div></div>
+<div class="stat red"><div class="num" id="statBroken">–</div><div class="lbl"><i data-lucide="alert-triangle"></i> Broken links</div></div>
+<div class="stat green"><div class="num" id="statClean">–</div><div class="lbl"><i data-lucide="check-circle-2"></i> Pages fully clean</div></div>
+<div class="stat"><div class="num" id="statAvgMobile">–</div><div class="lbl"><i data-lucide="smartphone"></i> Avg. mobile score</div></div>
+<div class="stat"><div class="num" id="statAvgDesktop">–</div><div class="lbl"><i data-lucide="monitor"></i> Avg. desktop score</div></div>
+</div>
+<!-- AI Summary -->
+<div class="ai-summary-wrap" id="aiSummaryWrap" style="display:none;">
+<div class="ai-summary-head"><span class="ai-summary-badge">✨</span> AI Performance Summary</div>
+<div class="ai-summary-body" id="aiSummaryBody"></div>
+</div>
+<!-- Report Export Links -->
+<div class="report-links">
+<a class="report-link disabled" href="/api/report/analysis.csv" id="dlCsv"><i data-lucide="file-spreadsheet"></i> Download CSV</a>
+<a class="report-link disabled" href="/api/report/analysis.pdf" id="dlPdf"><i data-lucide="file-text"></i> Download PDF</a>
+</div>
+<!-- Control Card -->
+<div class="control-card">
+<div class="mode-toggle" id="siteModeToggle">
+<button class="active" data-mode="crawl" type="button"><i data-lucide="globe"></i> Crawl a site</button>
+<button data-mode="list" type="button"><i data-lucide="list"></i> Use a URL list</button>
+<button data-mode="history" type="button"><i data-lucide="archive"></i> Load from history</button>
+</div>
+<div class="controls">
+<input id="siteUrl" placeholder="https://example.com" type="text"/>
+<button class="primary" disabled="" id="btnCrawl"><i data-lucide="search"></i> Crawl Site</button>
+<button class="primary" disabled="" id="btnScanLinks"><i data-lucide="link-2"></i> Scan for Broken Links</button>
+<button class="primary" disabled="" id="btnLighthouse"><i data-lucide="gauge"></i> Scan for Page Score</button>
+</div>
+<div class="url-list-wrap" id="siteListInput" style="display:none;">
+<textarea id="siteUrlList" placeholder="https://example.com/page-1
+https://example.com/page-2
+https://example.com/page-3" rows="4"></textarea>
+<div class="file-row">
+<input accept=".txt,.csv" id="siteUrlFile" type="file"/>
+<span>or paste above — one URL per line</span>
+</div>
+</div>
+<div class="history-select-wrap" id="siteHistoryInput" style="display:none;">
+<select id="siteHistorySelect"><option value="">Loading saved crawls…</option></select>
+</div>
+<div class="progress-track"><div class="progress-fill" id="crawlBar"></div></div>
+<div class="status-line" id="crawlStatus">Enter a URL and press Crawl site.</div>
+<div class="progress-track" id="linkScanTrack" style="display:none;"><div class="progress-fill" id="linkScanBar"></div></div>
+<div class="status-line" id="linkScanStatus" style="display:none;"></div>
+<div class="progress-track" id="lighthouseTrack" style="display:none;"><div class="progress-fill" id="lighthouseBar"></div></div>
+<div class="status-line" id="lighthouseStatus" style="display:none;"></div>
+</div>
+<!-- Results Table -->
+<div class="table-wrap">
+<table>
+<thead>
+<tr>
+<th class="idx">#</th>
+<th>Title</th>
+<th>Path</th>
+<th class="col-status">Link status</th>
+<th class="col-perf">Performance</th>
+<th class="col-details">Details</th>
+</tr>
+</thead>
+<tbody id="pagesBody">
+<tr><td colspan="6"><div class="empty">No pages indexed yet — crawl a site to begin analysis.</div></td></tr>
+</tbody>
+</table>
+</div>
+</div>
+<!-- Modal Overlay for Core Web Vitals, Recommendations, & AI Forecast -->
+<div class="modal-overlay" id="detailsModalOverlay">
+<div aria-labelledby="detailsModalTitle" aria-modal="true" class="modal-box" role="dialog">
+<div class="modal-head">
+<div>
+<h2 id="detailsModalTitle">Page Performance Details</h2>
+<div class="modal-subtitle" id="detailsModalPath"></div>
+</div>
+<button class="modal-close-btn" id="detailsModalCloseBtn" type="button">× Close</button>
+</div>
+<div class="modal-columns">
+<div class="modal-col">
+<div class="modal-col-head">Core Web Vitals</div>
+<div id="detailsModalVitals"></div>
+</div>
+<div class="modal-col">
+<div class="modal-col-head">Audit Recommendations</div>
+<div id="detailsModalRecs"></div>
+</div>
+<div class="modal-col">
+<div class="modal-col-head">AI Prognosis &amp; Forecast</div>
+<div id="detailsModalForecast"></div>
+</div>
+</div>
+</div>
+</div>
+<script>
+(function(){
+  "use strict";
+
+  const $ = id => document.getElementById(id);
+  const state = {
+    pages: [],
+    linkResults: {},
+    lhResults: {},
+    linkScanStarted: false,
+    lighthouseStarted: false,
+    lighthouseCap: 0,
+    mode: "crawl",
+  };
+
+  function refreshIcons(){
+    if(window.lucide && typeof window.lucide.createIcons === "function"){
+      window.lucide.createIcons();
+    }
+  }
+
+  function escapeHtml(s){
+    return String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+  }
+
+  function parseUrlListText(text){
+    const lines = String(text || "").split(/\r?\n/);
+    const urls = [];
+    for(const line of lines){
+      const trimmed = line.trim();
+      if(!trimmed || trimmed.startsWith("#")) continue;
+      trimmed.split(",").map(p => p.trim()).filter(Boolean).forEach(p => {
+        if(/^https?:\/\//i.test(p) || /^[a-z0-9.-]+\.[a-z]{2,}(\/|$|\?)/i.test(p)) urls.push(p);
+      });
+    }
+    return Array.from(new Set(urls));
+  }
+
+  function pathFromUrl(urlStr){
+    try{
+      const u = new URL(/^https?:\/\//i.test(urlStr) ? urlStr : `https://${urlStr}`);
+      let p = u.pathname;
+      if(p.length > 1 && p.endsWith("/")) p = p.slice(0, -1);
+      if(p === "") p = "/";
+      return p + u.search;
+    }catch(e){ return urlStr; }
+  }
+
+  function previewListMode(){
+    if(state.mode !== "list") return;
+    const urls = parseUrlListText($("siteUrlList").value);
+    state.pages = urls.map(u => ({ title: "(not yet rendered)", url: u, path: pathFromUrl(u) }));
+    renderTable();
+    updateDashboard();
+  }
+
+  function setMode(mode){
+    state.mode = mode;
+    const toggle = $("siteModeToggle");
+    toggle.querySelectorAll("button").forEach(b => b.classList.toggle("active", b.getAttribute("data-mode") === mode));
+    $("siteUrl").style.display = mode === "crawl" ? "" : "none";
+    $("siteListInput").style.display = mode === "list" ? "" : "none";
+    $("siteHistoryInput").style.display = mode === "history" ? "" : "none";
+    if(mode === "list"){
+      previewListMode();
+    }else if(mode === "history"){
+      loadHistoryOptions();
+      state.pages = [];
+      renderTable();
+      updateDashboard();
+    }else{
+      state.pages = [];
+      renderTable();
+      updateDashboard();
+    }
+    updateButtonStates();
+    refreshIcons();
+  }
+
+  function setupModeToggle(){
+    const toggle = $("siteModeToggle");
+    toggle.querySelectorAll("button").forEach(btn => {
+      btn.addEventListener("click", () => setMode(btn.getAttribute("data-mode")));
+    });
+  }
+
+  async function loadHistoryOptions(){
+    const select = $("siteHistorySelect");
+    select.innerHTML = `<option value="">Loading saved crawls…</option>`;
+    try{
+      const result = await api("/api/history/pagesets");
+      const opts = result.options || [];
+      if(opts.length === 0){
+        select.innerHTML = `<option value="">No saved crawls yet</option>`;
+        return;
+      }
+      select.innerHTML = `<option value="">Select a saved crawl…</option>` +
+        opts.map(o => `<option value="${escapeHtml(o.key)}">${escapeHtml(o.label)}</option>`).join("");
+    }catch(e){
+      select.innerHTML = `<option value="">Failed to load saved crawls</option>`;
+    }
+  }
+
+  function setupHistorySelect(){
+    const select = $("siteHistorySelect");
+    select.addEventListener("change", async () => {
+      updateButtonStates();
+      if(!select.value) return;
+      await crawlSite();
+    });
+  }
+
+  function setupFileUpload(){
+    const fileInput = $("siteUrlFile");
+    const textarea = $("siteUrlList");
+    fileInput.addEventListener("change", () => {
+      const file = fileInput.files[0];
+      if(!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        const parsed = parseUrlListText(String(reader.result || ""));
+        const existing = textarea.value.trim();
+        textarea.value = existing ? existing + "\n" + parsed.join("\n") : parsed.join("\n");
+        fileInput.value = "";
+        previewListMode();
+      };
+      reader.onerror = () => alert("Failed to read that file.");
+      reader.readAsText(file);
+    });
+  }
+
+  async function api(path, opts){
+    const res = await fetch(path, Object.assign({ headers: { "Content-Type": "application/json" } }, opts));
+    let body;
+    try { body = await res.json(); } catch(e){ body = { ok:false, error:"Server returned a non-JSON response." }; }
+    if(!res.ok || body.ok === false){
+      const err = new Error(body.error || `Request failed (HTTP ${res.status})`);
+      err.partialPages = body.partialPages;
+      throw err;
+    }
+    return body;
+  }
+
+  let aiPollTimer = null;
+
+  function renderAiSummary(result){
+    const wrap = $("aiSummaryWrap");
+    const body = $("aiSummaryBody");
+    const entries = Array.isArray(result.entries) ? result.entries : [];
+    if(result.status === "idle" && entries.length === 0){
+      wrap.style.display = "none";
+      return;
+    }
+    wrap.style.display = "block";
+
+    const entriesHtml = entries.map(e => {
+      const when = e.createdAt ? new Date(e.createdAt).toLocaleString() : "";
+      const html = e.html || `<p>${escapeHtml(e.text || "")}</p>`;
+      return `<div class="ai-summary-entry">
+        <div class="ai-summary-entry-head">
+          <span class="ai-summary-phase">${escapeHtml(e.reportType || "AI Summary")}</span>
+          ${when ? `<span class="ai-summary-time">${escapeHtml(when)}</span>` : ""}
+        </div>
+        <div class="ai-summary-html">${html}</div>
+      </div>`;
+    }).join("");
+
+    let statusHtml = "";
+    if(result.status === "generating"){
+      statusHtml = `<div class="ai-summary-entry"><span class="spinner"></span> <span class="ai-summary-status">Synthesizing performance AI summary…</span></div>`;
+    }else if(result.status === "error"){
+      statusHtml = `<div class="ai-summary-entry">
+        <div class="ai-summary-error">AI summary unavailable: ${escapeHtml(result.error || "unknown error")}</div>
+        ${result.canRetry ? `<button type="button" class="ai-summary-retry-btn" id="aiSummaryRetryBtn">Retry</button>` : ""}
+      </div>`;
+    }
+
+    body.innerHTML = entriesHtml + statusHtml || `<div class="ai-summary-entry"><span class="ai-summary-status">No summary yet.</span></div>`;
+
+    const retryBtn = $("aiSummaryRetryBtn");
+    if(retryBtn) retryBtn.addEventListener("click", retryAiSummary);
+    refreshIcons();
+  }
+
+  async function retryAiSummary(){
+    const btn = $("aiSummaryRetryBtn");
+    if(btn){ btn.disabled = true; btn.textContent = "Retrying…"; }
+    try{
+      await api("/api/ai-summary/analysis/retry", { method: "POST", body: JSON.stringify({}) });
+    }catch(e){ }
+    pollAiSummary();
+  }
+
+  async function pollAiSummary(){
+    try{
+      const result = await api("/api/ai-summary/analysis");
+      renderAiSummary(result);
+      if(result.status === "generating"){
+        if(!aiPollTimer) aiPollTimer = setInterval(pollAiSummary, 2500);
+      }else if(aiPollTimer){
+        clearInterval(aiPollTimer);
+        aiPollTimer = null;
+      }
+    }catch(e){ }
+  }
+
+  function linkCellHtml(path){
+    if(!state.linkScanStarted) return '<span class="pill pill-dim">not scanned</span>';
+    const r = state.linkResults[path];
+    if(!r) return '<span class="spinner" title="Scanning links…"></span>';
+    if(r.status === "green"){
+      return `<span class="pill pill-green">OK (${r.checked})</span>`;
+    }
+    return `<span class="pill pill-red">Broken (${r.broken.length})</span>`;
+  }
+
+  function linkDetailHtml(path){
+    const r = state.linkResults[path];
+    if(!r || r.status !== "red" || !r.broken.length) return "";
+    return `<div class="broken-detail">${r.broken.map(escapeHtml).join("<br>")}</div>`;
+  }
+
+  function scoreBadgeHtml(entry, label){
+    if(!entry){
+      return `<span class="spinner" title="Scoring (${label})…"></span>`;
+    }
+    if(entry.error || entry.score === null || entry.score === undefined){
+      return `<span class="score-na" title="${escapeHtml(entry.error || "failed")}">${label[0]}: n/a</span>`;
+    }
+    const cls = entry.score >= 90 ? "score-good" : (entry.score >= 50 ? "score-mid" : "score-poor");
+    return `<span class="score-badge ${cls}" title="${label}">${label[0]}:${entry.score}</span>`;
+  }
+
+  const VITAL_LABELS = { lcp: "LCP", fcp: "FCP", cls: "CLS", tbt: "TBT", speedIndex: "Speed Index" };
+  let detailsModalPath = null;
+  let forecastPollTimer = null;
+
+  function vitalValueHtml(vital){
+    if(!vital || vital.displayValue === null || vital.displayValue === undefined) return '<span class="vital-na">n/a</span>';
+    const cls = vital.score === null || vital.score === undefined ? "" :
+      (vital.score >= 0.9 ? "vital-good" : (vital.score >= 0.5 ? "vital-mid" : "vital-poor"));
+    return `<span class="vital-value ${cls}">${escapeHtml(vital.displayValue)}</span>`;
+  }
+
+  function renderVitalsColumn(entry){
+    const mobileVitals = (entry && entry.mobile && entry.mobile.vitals) || {};
+    const desktopVitals = (entry && entry.desktop && entry.desktop.vitals) || {};
+    const rows = Object.keys(VITAL_LABELS).map(key => `
+      <tr>
+        <td class="vital-metric">${VITAL_LABELS[key]}</td>
+        <td>${vitalValueHtml(mobileVitals[key])}</td>
+        <td>${vitalValueHtml(desktopVitals[key])}</td>
+      </tr>
+    `).join("");
+    $("detailsModalVitals").innerHTML = `
+      <table class="vitals-table">
+        <thead><tr><th>Metric</th><th>Mobile</th><th>Desktop</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    `;
+  }
+
+  function recCardsHtml(recommendations){
+    if(!recommendations || recommendations.length === 0){
+      return `<div class="rec-empty">No critical optimization opportunities detected.</div>`;
+    }
+    return recommendations.map(r => `
+      <div class="rec-card">
+        <div class="rec-title">${escapeHtml(r.title)}</div>
+        ${r.description ? `<div class="rec-desc">${escapeHtml(r.description)}</div>` : ""}
+        ${r.displayValue ? `<div class="rec-savings">${escapeHtml(r.displayValue)}</div>` : ""}
+      </div>
+    `).join("");
+  }
+
+  function renderRecommendationsColumn(entry){
+    const mobileRecs = (entry && entry.mobile && entry.mobile.recommendations) || [];
+    const desktopRecs = (entry && entry.desktop && entry.desktop.recommendations) || [];
+    $("detailsModalRecs").innerHTML = `
+      <div class="rec-group-label">Mobile Optimizations</div>
+      ${recCardsHtml(mobileRecs)}
+      <div class="rec-group-label">Desktop Optimizations</div>
+      ${recCardsHtml(desktopRecs)}
+    `;
+  }
+
+  function renderForecastColumn(result){
+    const el = $("detailsModalForecast");
+    if(!result || result.status === "idle"){
+      el.innerHTML = `<span class="ai-summary-status">Not requested yet.</span>`;
+      return;
+    }
+    if(result.status === "generating"){
+      el.innerHTML = `<span class="spinner"></span> <span class="ai-summary-status">Assessing performance with AI…</span>`;
+      return;
+    }
+    if(result.status === "error"){
+      el.innerHTML = `
+        <div class="ai-summary-error">AI forecast unavailable: ${escapeHtml(result.error || "unknown error")}</div>
+        <button type="button" class="ai-summary-retry-btn" id="detailsForecastRetryBtn">Retry</button>
+      `;
+      const btn = $("detailsForecastRetryBtn");
+      if(btn) btn.addEventListener("click", () => requestPageForecast(detailsModalPath));
+      return;
+    }
+    el.innerHTML = `<div class="forecast-html">${result.html || `<p>${escapeHtml(result.text || "")}</p>`}</div>`;
+  }
+
+  async function pollPageForecast(pagePath){
+    try{
+      const result = await api(`/api/analysis/page-forecast?path=${encodeURIComponent(pagePath)}`);
+      if(detailsModalPath !== pagePath) return;
+      renderForecastColumn(result);
+      if(result.status === "generating"){
+        if(!forecastPollTimer) forecastPollTimer = setInterval(() => pollPageForecast(pagePath), 2000);
+      }else if(forecastPollTimer){
+        clearInterval(forecastPollTimer);
+        forecastPollTimer = null;
+      }
+    }catch(e){ }
+  }
+
+  async function requestPageForecast(pagePath){
+    renderForecastColumn({ status: "generating" });
+    try{
+      await api("/api/analysis/page-forecast", { method: "POST", body: JSON.stringify({ path: pagePath }) });
+    }catch(e){ }
+    pollPageForecast(pagePath);
+  }
+
+  function openDetailsModal(pagePath){
+    const entry = state.lhResults[pagePath];
+    if(!entry) return;
+    detailsModalPath = pagePath;
+    const page = state.pages.find(p => p.path === pagePath);
+    $("detailsModalTitle").textContent = page ? page.title : pagePath;
+    $("detailsModalPath").textContent = pagePath;
+    renderVitalsColumn(entry);
+    renderRecommendationsColumn(entry);
+    $("detailsModalOverlay").classList.add("open");
+    document.body.style.overflow = "hidden";
+    requestPageForecast(pagePath);
+  }
+
+  function closeDetailsModal(){
+    detailsModalPath = null;
+    $("detailsModalOverlay").classList.remove("open");
+    document.body.style.overflow = "";
+    if(forecastPollTimer){ clearInterval(forecastPollTimer); forecastPollTimer = null; }
+  }
+
+  $("pagesBody").addEventListener("click", (e) => {
+    const btn = e.target.closest(".details-icon-btn[data-details-path]");
+    if(!btn) return;
+    openDetailsModal(btn.getAttribute("data-details-path"));
+  });
+  $("detailsModalCloseBtn").addEventListener("click", closeDetailsModal);
+  $("detailsModalOverlay").addEventListener("click", (e) => {
+    if(e.target.id === "detailsModalOverlay") closeDetailsModal();
+  });
+  document.addEventListener("keydown", (e) => {
+    if(e.key === "Escape" && $("detailsModalOverlay").classList.contains("open")) closeDetailsModal();
+  });
+
+  function perfCellHtml(path, idx){
+    if(!state.lighthouseStarted) return '<span class="score-na">not scored</span>';
+    if(idx >= state.lighthouseCap) return '<span class="score-na">not scored</span>';
+    const r = state.lhResults[path];
+    const mobile = scoreBadgeHtml(r && r.mobile, "Mobile");
+    const desktop = scoreBadgeHtml(r && r.desktop, "Desktop");
+    return `<div class="perf-pair">${mobile}${desktop}</div>`;
+  }
+
+  function detailsCellHtml(path){
+    const r = state.lhResults[path];
+    const hasData = r && (r.mobile || r.desktop);
+    if(!hasData){
+      return `<button type="button" class="details-icon-btn" disabled title="Run &quot;Scan for Page Score&quot; first"><i data-lucide="info"></i></button>`;
+    }
+    return `<button type="button" class="details-icon-btn" data-details-path="${escapeHtml(path)}" title="View Core Web Vitals and recommendations"><i data-lucide="info"></i></button>`;
+  }
+
+  function renderTable(){
+    if(state.pages.length === 0){
+      $("pagesBody").innerHTML = `<tr><td colspan="6"><div class="empty">No pages indexed yet — crawl a site to get started.</div></td></tr>`;
+      refreshIcons();
+      return;
+    }
+    $("pagesBody").innerHTML = state.pages.map((p, i) => `
+      <tr>
+        <td class="idx">${i+1}</td>
+        <td class="ptitle">${escapeHtml(p.title)}</td>
+        <td class="ppath"><a href="${escapeHtml(p.url)}" target="_blank" rel="noopener">${escapeHtml(p.path)}</a></td>
+        <td>${linkCellHtml(p.path)}${linkDetailHtml(p.path)}</td>
+        <td>${perfCellHtml(p.path, i)}</td>
+        <td class="col-details">${detailsCellHtml(p.path)}</td>
+      </tr>
+    `).join("");
+    refreshIcons();
+  }
+
+  function updateDashboard(){
+    $("statTotal").textContent = state.pages.length;
+    if(state.linkScanStarted){
+      let broken = 0, clean = 0;
+      state.pages.forEach(p => {
+        const r = state.linkResults[p.path];
+        if(!r) return;
+        if(r.status === "red") broken++; else clean++;
+      });
+      $("statBroken").textContent = broken;
+      $("statClean").textContent = clean;
+    }
+    if(state.lighthouseStarted){
+      const entries = Object.values(state.lhResults);
+      const mobileScores = entries.map(r => r.mobile && r.mobile.score).filter(s => typeof s === "number");
+      const desktopScores = entries.map(r => r.desktop && r.desktop.score).filter(s => typeof s === "number");
+      const avg = arr => arr.length ? Math.round(arr.reduce((a,b)=>a+b,0) / arr.length) : "–";
+      $("statAvgMobile").textContent = avg(mobileScores);
+      $("statAvgDesktop").textContent = avg(desktopScores);
+    }
+    refreshIcons();
+  }
+
+  function setBar(id, pct, mode){
+    const bar = $(id);
+    bar.style.width = Math.max(0, Math.min(100, pct)) + "%";
+    bar.className = "progress-fill" + (mode ? " " + mode : "");
+  }
+
+  function hasSiteInput(){
+    if(state.mode === "list") return $("siteUrlList").value.trim().length > 0;
+    if(state.mode === "history") return $("siteHistorySelect").value.length > 0;
+    return $("siteUrl").value.trim().length > 0;
+  }
+
+  function updateButtonStates(){
+    const hasPages = state.pages.length > 0;
+    if(state.mode === "list"){
+      $("btnCrawl").disabled = true;
+      $("btnCrawl").title = "Not needed in this mode — press a Scan button directly.";
+      const ready = hasSiteInput();
+      $("btnScanLinks").disabled = !ready;
+      $("btnLighthouse").disabled = !ready;
+    }else if(state.mode === "history"){
+      $("btnCrawl").disabled = true;
+      $("btnCrawl").title = "Not needed in this mode — press a Scan button directly.";
+      $("btnScanLinks").disabled = !hasPages;
+      $("btnLighthouse").disabled = !hasPages;
+    }else{
+      const hasUrl = $("siteUrl").value.trim().length > 0;
+      $("btnCrawl").disabled = !hasUrl;
+      $("btnCrawl").title = "";
+      $("btnScanLinks").disabled = !hasPages;
+      $("btnLighthouse").disabled = !hasPages;
+    }
+    $("dlCsv").classList.toggle("disabled", !hasPages);
+    $("dlPdf").classList.toggle("disabled", !hasPages);
+  }
+
+  async function pollCrawlProgress(){
+    try{
+      const p = await api("/api/progress/site");
+      if(Array.isArray(p.pages) && p.pages.length !== state.pages.length){
+        state.pages = p.pages;
+        renderTable();
+        updateDashboard();
+        updateButtonStates();
+      }
+      if(p.total > 0){
+        const pct = p.status === "done" ? 100 : Math.min(99, Math.round((p.found / p.total) * 100));
+        setBar("crawlBar", pct, p.status === "error" ? "err" : (p.status === "done" ? "done" : ""));
+        if(p.status === "running") $("crawlStatus").textContent = `Crawling — ${p.found} of ~${p.total} page(s) rendered…`;
+      } else if(p.status === "running"){
+        $("crawlStatus").textContent = "Analyzing sitemap and page routes…";
+      }
+    }catch(e){ }
+  }
+
+  async function crawlSite(){
+    const mode = state.mode;
+    let body;
+    if(mode === "list"){
+      const urls = parseUrlListText($("siteUrlList").value);
+      if(urls.length === 0){
+        $("crawlStatus").textContent = "Enter at least one URL in the list.";
+        $("crawlStatus").className = "status-line err";
+        return;
+      }
+      const maxPages = parseInt($("maxPages").value, 10) || 200;
+      body = { mode: "list", urls, maxPages };
+    }else if(mode === "history"){
+      const sel = $("siteHistorySelect").value;
+      if(!sel){
+        $("crawlStatus").textContent = "Select a saved crawl from the list.";
+        $("crawlStatus").className = "status-line err";
+        return;
+      }
+      const [historyType, historyId, historySide] = sel.split(":");
+      const maxPages = parseInt($("maxPages").value, 10) || 200;
+      body = { mode: "history", historyType, historyId, historySide: historySide || null, maxPages };
+    }else{
+      const url = $("siteUrl").value.trim();
+      if(!url){
+        $("crawlStatus").textContent = "Enter a URL first.";
+        $("crawlStatus").className = "status-line err";
+        return;
+      }
+      const maxPages = parseInt($("maxPages").value, 10) || 200;
+      body = { url, maxPages };
+    }
+
+    $("btnCrawl").disabled = true;
+    state.pages = [];
+    state.linkResults = {};
+    state.lhResults = {};
+    state.linkScanStarted = false;
+    state.lighthouseStarted = false;
+    closeDetailsModal();
+    renderTable();
+    updateDashboard();
+    updateButtonStates();
+    $("statBroken").textContent = "–";
+    $("statClean").textContent = "–";
+    $("statAvgMobile").textContent = "–";
+    $("statAvgDesktop").textContent = "–";
+    setBar("crawlBar", 0, "");
+    $("crawlStatus").textContent = "Starting…";
+    $("crawlStatus").className = "status-line";
+    $("linkScanStatus").style.display = "none";
+    $("linkScanTrack").style.display = "none";
+    $("lighthouseStatus").style.display = "none";
+    $("lighthouseTrack").style.display = "none";
+
+    const pollTimer = setInterval(pollCrawlProgress, 700);
+    try{
+      const result = await api("/api/crawl/site", { method:"POST", body: JSON.stringify(body) });
+      state.pages = result.pages;
+      renderTable();
+      updateDashboard();
+      updateButtonStates();
+      setBar("crawlBar", 100, "done");
+      const invalidNote = result.invalidCount ? ` (${result.invalidCount} invalid URL(s) skipped)` : "";
+      const verb = mode === "list" ? "loaded from the list" : "rendered and indexed";
+      $("crawlStatus").textContent = `Done — ${result.count} page(s) ${verb}.${invalidNote}`;
+      $("crawlStatus").className = "status-line ok";
+    }catch(e){
+      if(e.partialPages && e.partialPages.length){
+        state.pages = e.partialPages;
+        renderTable();
+        updateDashboard();
+        updateButtonStates();
+      }
+      setBar("crawlBar", 100, "err");
+      const count = state.pages.length;
+      $("crawlStatus").textContent = `Failed: ${e.message}${count ? ` — kept ${count} page(s) found before this happened.` : ""}`;
+      $("crawlStatus").className = "status-line err";
+    }finally{
+      clearInterval(pollTimer);
+      updateButtonStates();
+      pollAiSummary();
+      refreshIcons();
+    }
+  }
+
+  async function pollLinkScan(){
+    try{
+      const p = await api("/api/analysis/linkscan/progress");
+      if(p.results){
+        state.linkResults = p.results;
+        renderTable();
+        updateDashboard();
+      }
+      if(p.total > 0){
+        const el = $("linkScanStatus");
+        el.style.display = "block";
+        $("linkScanTrack").style.display = "block";
+        if(p.status === "running"){
+          el.textContent = `Scanning links — ${p.done} of ${p.total} page(s)…`;
+          setBar("linkScanBar", Math.min(99, Math.round((p.done / p.total) * 100)), "");
+        }
+      }
+    }catch(e){ }
+  }
+
+  async function scanLinks(){
+    if(state.mode === "list" && state.pages.length === 0){
+      $("btnScanLinks").disabled = true;
+      $("btnLighthouse").disabled = true;
+      await crawlSite();
+      if(state.pages.length === 0){
+        updateButtonStates();
+        return;
+      }
+    }
+
+    state.linkScanStarted = true;
+    state.linkResults = {};
+    renderTable();
+    $("btnScanLinks").disabled = true;
+    const el = $("linkScanStatus");
+    el.style.display = "block";
+    el.className = "status-line";
+    el.textContent = "Starting link health audit…";
+    $("linkScanTrack").style.display = "block";
+    setBar("linkScanBar", 0, "");
+
+    const pollTimer = setInterval(pollLinkScan, 600);
+    try{
+      const result = await api("/api/analysis/linkscan", { method:"POST", body: JSON.stringify({}) });
+      state.linkResults = result.results;
+      renderTable();
+      updateDashboard();
+      setBar("linkScanBar", 100, "done");
+      el.textContent = `Completed — ${state.pages.length} page(s) audited for link health.`;
+      el.className = "status-line ok";
+    }catch(e){
+      if(e.partialResults){
+        state.linkResults = e.partialResults;
+        renderTable();
+        updateDashboard();
+      }
+      setBar("linkScanBar", 100, "err");
+      el.textContent = `Failed: ${e.message}`;
+      el.className = "status-line err";
+    }finally{
+      clearInterval(pollTimer);
+      $("btnScanLinks").disabled = false;
+      pollAiSummary();
+      refreshIcons();
+    }
+  }
+
+  async function pollLighthouse(){
+    try{
+      const p = await api("/api/analysis/lighthouse/progress");
+      if(p.results){
+        state.lhResults = p.results;
+        renderTable();
+        updateDashboard();
+      }
+      if(p.total > 0){
+        const el = $("lighthouseStatus");
+        el.style.display = "block";
+        $("lighthouseTrack").style.display = "block";
+        if(p.status === "running"){
+          el.textContent = `Running Lighthouse — audit ${p.done} of ${p.total} (2 per page: mobile + desktop)…`;
+          setBar("lighthouseBar", Math.min(99, Math.round((p.done / p.total) * 100)), "");
+        }
+      }
+    }catch(e){ }
+  }
+
+  async function runLighthouseScan(){
+    if(state.mode === "list" && state.pages.length === 0){
+      $("btnScanLinks").disabled = true;
+      $("btnLighthouse").disabled = true;
+      await crawlSite();
+      if(state.pages.length === 0){
+        updateButtonStates();
+        return;
+      }
+    }
+
+    const cap = state.pages.length;
+    state.lighthouseStarted = true;
+    state.lighthouseCap = cap;
+    state.lhResults = {};
+    closeDetailsModal();
+    renderTable();
+    $("btnLighthouse").disabled = true;
+    const el = $("lighthouseStatus");
+    el.style.display = "block";
+    el.className = "status-line";
+    el.textContent = "Starting Lighthouse performance audits…";
+    $("lighthouseTrack").style.display = "block";
+    setBar("lighthouseBar", 0, "");
+
+    const pollTimer = setInterval(pollLighthouse, 800);
+    try{
+      const result = await api("/api/analysis/lighthouse", { method:"POST", body: JSON.stringify({ maxPages: cap }) });
+      state.lhResults = result.results;
+      renderTable();
+      updateDashboard();
+      setBar("lighthouseBar", 100, "done");
+      el.textContent = `Completed — ${result.scannedCount} of ${result.totalPages} page(s) scored.`;
+      el.className = "status-line ok";
+    }catch(e){
+      if(e.partialResults){
+        state.lhResults = e.partialResults;
+        renderTable();
+        updateDashboard();
+      }
+      setBar("lighthouseBar", 100, "err");
+      el.textContent = `Failed: ${e.message}`;
+      el.className = "status-line err";
+    }finally{
+      clearInterval(pollTimer);
+      $("btnLighthouse").disabled = false;
+      pollAiSummary();
+      refreshIcons();
+    }
+  }
+
+  $("btnCrawl").addEventListener("click", crawlSite);
+  $("btnScanLinks").addEventListener("click", scanLinks);
+  $("btnLighthouse").addEventListener("click", runLighthouseScan);
+  $("maxPages").addEventListener("input", function(){
+    const cleaned = this.value.replace(/[^0-9]/g, "");
+    this.value = cleaned;
+    this.classList.toggle("invalid", cleaned.length === 0);
+  });
+  $("siteUrl").addEventListener("input", () => updateButtonStates());
+  $("siteUrl").addEventListener("keydown", e => { if(e.key === "Enter" && !$("btnCrawl").disabled) $("btnCrawl").click(); });
+  $("siteUrlList").addEventListener("input", () => { updateButtonStates(); previewListMode(); });
+  setupModeToggle();
+  setupFileUpload();
+  setupHistorySelect();
+  updateButtonStates();
+  pollAiSummary();
+  refreshIcons();
+
+})();
+</script>
+</body></html>

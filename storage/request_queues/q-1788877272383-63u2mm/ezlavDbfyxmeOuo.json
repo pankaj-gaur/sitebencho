@@ -1,0 +1,9 @@
+{
+	"id": "ezlavDbfyxmeOuo",
+	"json": "{\"id\":\"ezlavDbfyxmeOuo\",\"url\":\"https://contentbloom.com/blog/category/company-news/\",\"uniqueKey\":\"https://contentbloom.com/blog/category/company-news\",\"method\":\"GET\",\"noRetry\":false,\"retryCount\":0,\"errorMessages\":[],\"headers\":{},\"userData\":{\"__crawlee\":{\"crawlDepth\":1,\"enqueueStrategy\":\"same-domain\"}}}",
+	"method": "GET",
+	"orderNo": 1788877285588,
+	"retryCount": 0,
+	"uniqueKey": "https://contentbloom.com/blog/category/company-news",
+	"url": "https://contentbloom.com/blog/category/company-news/"
+}

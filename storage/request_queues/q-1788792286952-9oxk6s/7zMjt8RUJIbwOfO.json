@@ -1,0 +1,9 @@
+{
+	"id": "7zMjt8RUJIbwOfO",
+	"json": "{\"id\":\"7zMjt8RUJIbwOfO\",\"url\":\"https://contentbloom.com/blog/the-importance-of-digital-accessibility-how-to-design-for-all-users/\",\"uniqueKey\":\"https://contentbloom.com/blog/the-importance-of-digital-accessibility-how-to-design-for-all-users\",\"method\":\"GET\",\"noRetry\":false,\"retryCount\":1,\"errorMessages\":[\"Error: browserController.newPage() failed: 6hKfSxnPhqJHUQPXKwKw6\\nCause:browserContext.newPage: Target page, context or browser has been closed.\\n    at BrowserPool._createPageForBrowser (C:\\\\Projects\\\\Site Diff Inspector\\\\site-diff-inspector\\\\node_modules\\\\@crawlee\\\\browser-pool\\\\browser-pool.js:413:19)\\n    at async C:\\\\Projects\\\\Site Diff Inspector\\\\site-diff-inspector\\\\node_modules\\\\@crawlee\\\\browser-pool\\\\browser-pool.js:303:20\"],\"headers\":{},\"userData\":{\"__crawlee\":{\"state\":5}}}",
+	"method": "GET",
+	"orderNo": 1788792322017,
+	"retryCount": 1,
+	"uniqueKey": "https://contentbloom.com/blog/the-importance-of-digital-accessibility-how-to-design-for-all-users",
+	"url": "https://contentbloom.com/blog/the-importance-of-digital-accessibility-how-to-design-for-all-users/"
+}

@@ -1,0 +1,9 @@
+{
+	"id": "fhfQFvHJ1bFtIx3",
+	"json": "{\"id\":\"fhfQFvHJ1bFtIx3\",\"url\":\"https://contentbloom.com/blog/why-sitecore-is-the-right-choice-for-your-customer-data-platform/\",\"loadedUrl\":\"https://contentbloom.com/blog/why-sitecore-is-the-right-choice-for-your-customer-data-platform/\",\"uniqueKey\":\"https://contentbloom.com/blog/why-sitecore-is-the-right-choice-for-your-customer-data-platform\",\"method\":\"GET\",\"noRetry\":false,\"retryCount\":0,\"errorMessages\":[],\"headers\":{},\"userData\":{\"__crawlee\":{\"state\":4}},\"handledAt\":\"2026-09-22T06:20:29.508Z\"}",
+	"method": "GET",
+	"orderNo": null,
+	"retryCount": 0,
+	"uniqueKey": "https://contentbloom.com/blog/why-sitecore-is-the-right-choice-for-your-customer-data-platform",
+	"url": "https://contentbloom.com/blog/why-sitecore-is-the-right-choice-for-your-customer-data-platform/"
+}

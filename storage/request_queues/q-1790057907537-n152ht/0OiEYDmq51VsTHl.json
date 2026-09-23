@@ -1,0 +1,9 @@
+{
+	"id": "0OiEYDmq51VsTHl",
+	"json": "{\"id\":\"0OiEYDmq51VsTHl\",\"url\":\"https://contentbloom.com/blog/nfts-blockchain-what-it-all-means-for-financial-institutions/\",\"loadedUrl\":\"https://contentbloom.com/blog/nfts-blockchain-what-it-all-means-for-financial-institutions/\",\"uniqueKey\":\"https://contentbloom.com/blog/nfts-blockchain-what-it-all-means-for-financial-institutions\",\"method\":\"GET\",\"noRetry\":false,\"retryCount\":1,\"errorMessages\":[\"page.title: Target page, context or browser has been closed\\n    at PlaywrightCrawler.requestHandler (C:\\\\Projects\\\\Site Diff Inspector\\\\site-diff-inspector\\\\crawler.js:165:35)\\n    at async wrap (C:\\\\Projects\\\\Site Diff Inspector\\\\site-diff-inspector\\\\node_modules\\\\@apify\\\\timeout\\\\cjs\\\\index.cjs:56:21)\"],\"headers\":{},\"userData\":{\"__crawlee\":{\"state\":5}}}",
+	"method": "GET",
+	"orderNo": 1790058038535,
+	"retryCount": 1,
+	"uniqueKey": "https://contentbloom.com/blog/nfts-blockchain-what-it-all-means-for-financial-institutions",
+	"url": "https://contentbloom.com/blog/nfts-blockchain-what-it-all-means-for-financial-institutions/"
+}
