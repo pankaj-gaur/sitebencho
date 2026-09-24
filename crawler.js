@@ -86,6 +86,12 @@ async function getSitemapUrls(origin, { maxUrls = 500, maxSubSitemaps = 25, user
  * enqueued for further crawling (site-crawl mode). When false, ONLY the
  * URLs in `startRequests` are ever visited — nothing is followed beyond
  * that list (explicit URL-list mode).
+ *
+ * `maxPages` caps UNIQUE PAGES stored, not requests made. Requests that
+ * resolve to an already-stored page (e.g. the start URL redirecting to
+ * /en/us and then a nav link to /en/us being crawled again) don't count
+ * against it — previously they did, which made every crawl return one page
+ * fewer than "Max Pages to Scan".
  */
 async function runPlaywrightCrawl(startRequests, {
   maxPages,
@@ -138,6 +144,12 @@ async function runPlaywrightCrawl(startRequests, {
   let blockAbort = null;
   let crawler = null;
 
+  // Unique-page cap. Enforced in requestHandler, not via maxRequestsPerCrawl
+  // (which counts every request, including ones that turn out to be
+  // duplicates of a page already stored).
+  const pageLimit = maxPages > 0 ? maxPages : Infinity;
+  let limitReached = false;
+
   function pauseCrawlerFor(ms) {
     const pool = crawler && crawler.autoscaledPool;
     if (!pool) return;
@@ -172,7 +184,14 @@ async function runPlaywrightCrawl(startRequests, {
 
     crawler = new PlaywrightCrawler({
       requestQueue,
-      maxRequestsPerCrawl: Math.max(maxPages || 0, startRequests.length),
+      // Safety net only — the real cap is pageLimit (unique pages), enforced
+      // in requestHandler. Redirects, duplicate paths and WAF retries use up
+      // requests without adding pages, so this has to sit well above
+      // pageLimit or it cuts the page count short (the old N-1 bug). It still
+      // stops a site full of duplicate URLs from being crawled forever.
+      maxRequestsPerCrawl: Number.isFinite(pageLimit)
+        ? Math.max(pageLimit, startRequests.length) * 3
+        : undefined,
       // Polite by default: low concurrency + a rate cap. WAFs flag bursts of
       // parallel requests as bot/attack traffic — this keeps the crawl slower
       // but looking like ordinary traffic instead of a scraping spike.
@@ -227,6 +246,9 @@ async function runPlaywrightCrawl(startRequests, {
         },
       },
       async requestHandler({ request, page, response, enqueueLinks }) {
+        // A page that was already in flight when the limit was hit — drop it.
+        if (limitReached) return;
+
         await page.waitForLoadState('networkidle', { timeout: 8000 }).catch(() => {});
 
         // WAF / bot-protection check BEFORE treating this as a real page — a
@@ -252,11 +274,22 @@ async function runPlaywrightCrawl(startRequests, {
           throw new Error(`Blocked by bot protection (${block.reason})`);
         }
 
+        if (limitReached) return;
+
         const loadedUrl = request.loadedUrl || request.url;
         const pathKey = normalizePath(loadedUrl);
         if (pages.has(pathKey)) return;
 
         const title = (await page.title()) || pathKey;
+
+        // Re-check and store with NO await in between. With maxConcurrency: 2,
+        // two handlers can both pass the checks above during the awaits and
+        // would otherwise overshoot the limit (or store the same path twice).
+        if (pages.has(pathKey)) return;
+        if (pages.size >= pageLimit) {
+          limitReached = true;
+          return;
+        }
 
         // Deliberately NOT storing rendered HTML here. The /api/test phase
         // re-fetches each matched page fresh (so the diff reflects current
@@ -271,13 +304,40 @@ async function runPlaywrightCrawl(startRequests, {
           console.log(`[crawl] ${sourceLabel || 'run'} — ${pages.size} page(s), rss=${mb}MB`);
         }
 
+        // Hit the cap: stop cleanly right away instead of letting the queue
+        // keep rendering pages that would just be thrown away.
+        if (pages.size >= pageLimit) {
+          limitReached = true;
+          total = pages.size;
+          report(total);
+          stopCrawler(`Reached max pages to scan (${pageLimit})`);
+          return;
+        }
+
         if (discover) {
-          await enqueueLinks({ strategy: 'same-domain' });
+          await enqueueLinks({
+            strategy: 'same-domain',
+            // Skip links to pages already stored (e.g. a nav link back to the
+            // page the start URL redirected to) — they'd only cost a request
+            // against the site and add nothing.
+            transformRequestFunction: (req) => {
+              try {
+                if (pages.has(normalizePath(req.url))) return false;
+              } catch (e) {
+                return false;
+              }
+              return req;
+            },
+          });
           // Links found beyond the sitemap push the real total up — keep the
           // progress estimate honest rather than stalling at the sitemap count.
           try {
             const info = await requestQueue.getInfo();
-            if (info && info.totalRequestCount > total) total = Math.min(info.totalRequestCount, maxPages || info.totalRequestCount);
+            if (info && info.totalRequestCount > total) {
+              total = Number.isFinite(pageLimit)
+                ? Math.min(info.totalRequestCount, pageLimit)
+                : info.totalRequestCount;
+            }
           } catch (e) {
             console.warn('[crawl] queue info check failed (non-fatal, progress total just won\'t self-correct):', e && e.message ? e.message : e);
           }
@@ -309,8 +369,10 @@ async function runPlaywrightCrawl(startRequests, {
     // page hangs are already bounded by requestHandlerTimeoutSecs (30s), so a
     // genuine silent gap this long almost always means the queue is empty and
     // the crawl is finishing, not stuck — check that before failing anything.
-    // A deliberate WAF cooldown pause is not a stall either.
+    // A deliberate WAF cooldown pause is not a stall either, and neither is
+    // winding down after reaching the page limit.
     watchdogTimer = setInterval(async () => {
+      if (limitReached) return;
       if (Date.now() < pausedUntil) return;
       if (Date.now() - lastActivity <= STALL_MS || watchdogFired) return;
 

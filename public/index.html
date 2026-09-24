@@ -1401,14 +1401,14 @@ https://example.com/page-3" rows="4"></textarea>
 <button class="modal-close-btn" id="testDetailsModalCloseBtn" type="button">× Close</button>
 </div>
 <div class="modal-tabs">
-<button class="modal-tab-btn active" data-tab="source" type="button">Source Diff</button>
-<button class="modal-tab-btn" data-tab="layout" type="button">Visual Layout</button>
+<button class="modal-tab-btn active" data-tab="layout" type="button">Visual Layout</button>
+<button class="modal-tab-btn" data-tab="source" type="button">Source Diff</button>
 </div>
-<div class="modal-tab-panel active" id="testDetailsSourceTab">
-<div id="testDetailsSourceBody"></div>
-</div>
-<div class="modal-tab-panel" id="testDetailsLayoutTab">
+<div class="modal-tab-panel active" id="testDetailsLayoutTab">
 <div id="testDetailsLayoutBody"></div>
+</div>
+<div class="modal-tab-panel" id="testDetailsSourceTab">
+<div id="testDetailsSourceBody"></div>
 </div>
 </div>
 </div>
@@ -2232,7 +2232,7 @@ https://example.com/page-3" rows="4"></textarea>
     const titleText = r.benchTitle === r.candTitle ? (r.benchTitle || "(untitled)") : `${r.benchTitle || "(untitled)"} → ${r.candTitle || "(untitled)"}`;
     $("testDetailsModalTitle").textContent = titleText;
     $("testDetailsModalPath").textContent = r.benchPath === r.candPath ? r.benchPath : `${r.benchPath} → ${r.candPath}`;
-    switchTestDetailsTab("source");
+    switchTestDetailsTab("layout");
     $("testDetailsModalOverlay").classList.add("open");
     document.body.style.overflow = "hidden";
     requestTestPageDetails(index);

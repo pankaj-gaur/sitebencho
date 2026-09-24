@@ -253,6 +253,18 @@
   .lb-col img { width: 100%; display: block; border: 1px solid var(--miti-border); border-radius: 6px; background: var(--miti-white); }
   .lb-note { padding: 40px; text-align: center; color: var(--miti-ink-soft); background: var(--miti-white); border: 1px dashed var(--miti-border-strong); border-radius: 8px; }
 
+  /* ---------- compare two dates ---------- */
+  .timeline.cmp-mode .day.has-img .thumb { cursor: pointer; }
+  .day.selected .thumb { border-color: var(--miti-accent); box-shadow: 0 0 0 3px var(--miti-accent-soft), var(--shadow-sm); }
+  .badge.sel { top: auto; bottom: 5px; left: 5px; right: auto; width: 18px; height: 18px; border: 0; border-radius: 50%; background: var(--miti-accent); color: var(--miti-white); font-size: 10px; font-weight: 800; display: flex; align-items: center; justify-content: center; }
+  .cmp-tray { position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%); z-index: 40; display: flex; align-items: center; gap: 10px; padding: 8px 8px 8px 16px; background: var(--miti-white); border: 1px solid var(--miti-border-strong); border-radius: var(--radius-pill); box-shadow: var(--shadow-lg); font-size: 13px; max-width: calc(100vw - 32px); }
+  .cmp-tray[hidden] { display: none; }
+  .lb.show ~ .cmp-tray { display: none; }          /* tray hides while the overlay is open */
+  .cmp-tray > svg { width: 16px; height: 16px; color: var(--miti-muted); flex: none; }
+  .cmp-slot { font-weight: 700; white-space: nowrap; }
+  .cmp-slot.empty { font-weight: 400; color: var(--miti-muted); }
+  body.cmp-tray-open .timeline { padding-bottom: 72px; }   /* last month never sits under the tray */
+
   @media (max-width: 1000px) {
     :root { --thumb-w: 96px; --thumb-h: 60px; --label-col: 84px; --spine-col: 24px; }
     .date b { font-size: 13px; }
@@ -374,6 +386,7 @@
     <label class="field">Month
       <select id="selMonth"><option value="all">All months</option></select>
     </label>
+    <button class="btn cmp-toggle" id="btnCmpMode" type="button" aria-pressed="false" title="Pick two days to compare side by side. Tip: Ctrl/⌘-click two days works anytime."><i data-lucide="columns-2"></i> Compare</button>
     <span class="grow"></span>
     <div class="bench-card" id="benchCard" hidden tabindex="0" role="button" aria-label="Open benchmark">
       <img id="benchImg" alt="">
@@ -415,6 +428,9 @@
   </div>
 </div>
 
+<!-- compare tray -->
+<div class="cmp-tray" id="cmpTray" hidden role="region" aria-label="Compare selection" aria-live="polite"></div>
+
 <script>
 (function () {
   const $ = (id) => document.getElementById(id);
@@ -429,7 +445,8 @@
     month: 'all',
     index: { days: {}, benchmark: null, years: [] },
     weekIdx: {},          // month number -> selected week index
-    lb: { date: null, compare: false },
+    lb: { date: null, compare: false, pairLeft: null },   // pairLeft: older date when comparing two captures
+    cmp: { on: false, picks: [], info: {} },               // picks in click order; info caches day data across year switches
     wasRunning: false,
     lastFinishedAt: null,   // last completed run already reflected on screen
     serviceMissing: false,
@@ -687,6 +704,18 @@
     $('selYear').value = String(state.year);
     renderBenchmark();
     renderTimeline();
+    if (!state.didInitialScroll) { state.didInitialScroll = true; scrollToCurrentMonth(); }
+  }
+
+  // On first load, bring the current month into view. Only once — later
+  // refreshes (a capture landing, Page/Year changes) leave the scroll alone.
+  function scrollToCurrentMonth() {
+    requestAnimationFrame(() => {
+      const el = document.querySelector('#timeline .tl-month.is-current');
+      if (!el) return;
+      const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      el.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'center' });
+    });
   }
 
   function renderBenchmark() {
@@ -745,11 +774,14 @@
       let inner = '';
       if (!inMonth) cls.push('outside');
       if (ds === todayStr) cls.push('today');
+      const selLetter = inMonth ? cmpLetter(ds) : '';
       if (info && info.hasImage) {
         cls.push('has-img', info.ok ? 'ok' : 'err');
+        if (selLetter) cls.push('selected');
         inner = `<img loading="lazy" src="${fileUrl(state.urlId, ds + '-thumb.jpg', info.capturedAt)}" alt="">`
           + `<span class="badge ${info.ok ? 'ok' : 'err'}"></span>`
-          + (ds === bmDate ? '<span class="badge bm">BENCH</span>' : '');
+          + (ds === bmDate ? '<span class="badge bm">BENCH</span>' : '')
+          + (selLetter ? `<span class="badge sel">${selLetter}</span>` : '');
       } else if (info && info.error) {
         cls.push('err');
         inner = `<span class="ph">Capture failed<br>${esc(info.error.slice(0, 40))}</span>`;
@@ -761,9 +793,10 @@
         inner = '<span class="ph">No capture</span>';
       }
       const clickable = info && info.hasImage;
-      const aria = `${prettyDate(ds)}${clickable ? ', open screenshot' : info && info.error ? ', capture failed' : ''}`;
+      const clickHint = state.cmp.on ? (selLetter ? `, selected as ${selLetter} for compare` : ', select for compare') : ', open screenshot';
+      const aria = `${prettyDate(ds)}${clickable ? clickHint : info && info.error ? ', capture failed' : ''}`;
       days += `<div class="${cls.join(' ')}" ${inMonth ? '' : 'aria-hidden="true"'}>
-          <button class="thumb" type="button" ${clickable ? `data-open="${ds}"` : 'tabindex="-1"'} aria-label="${esc(aria)}" title="${esc(info && info.error ? info.error : '')}">${inner}</button>
+          <button class="thumb" type="button" ${clickable ? `data-open="${ds}"` : 'tabindex="-1"'} ${clickable && state.cmp.on ? `aria-pressed="${!!selLetter}"` : ''} aria-label="${esc(aria)}" title="${esc(info && info.error ? info.error : '')}">${inner}</button>
           <span class="tick"></span>
           <div class="date"><b>${d.getDate()}</b><span>${DOW[d.getDay()]}</span></div>
         </div>`;
@@ -787,6 +820,7 @@
   function renderTimeline() {
     const months = state.month === 'all' ? [...Array(12).keys()] : [Number(state.month)];
     $('timeline').classList.toggle('single', months.length === 1);
+    $('timeline').classList.toggle('cmp-mode', state.cmp.on);
     $('timeline').innerHTML = months.map(renderMonth).join('');
     icons();
   }
@@ -800,11 +834,81 @@
       return;
     }
     const open = e.target.closest('[data-open]');
-    if (open) openLightbox(open.dataset.open);
+    if (!open) return;
+    // Compare mode, or Ctrl/⌘-click anytime: select instead of opening.
+    if (state.cmp.on || e.ctrlKey || e.metaKey) { e.preventDefault(); togglePick(open.dataset.open); return; }
+    openLightbox(open.dataset.open);
+  });
+
+  // ------------------------------------------------------------------
+  // compare two dates (timeline selection + tray)
+  // ------------------------------------------------------------------
+  // A is always the older date and B the newer, whichever order they were clicked.
+  function sortedPicks() { return state.cmp.picks.slice().sort(); }
+  function cmpLetter(ds) { const i = sortedPicks().indexOf(ds); return i < 0 ? '' : 'AB'[i]; }
+
+  function togglePick(ds) {
+    const picks = state.cmp.picks;
+    const at = picks.indexOf(ds);
+    if (at >= 0) {
+      picks.splice(at, 1);                       // clicking a selected day unselects it
+      delete state.cmp.info[ds];
+    } else {
+      if (picks.length >= 2) delete state.cmp.info[picks.pop()];   // third click: keep the first pick, replace the second
+      picks.push(ds);
+      state.cmp.info[ds] = state.index.days[ds]; // survives a Year switch, so Dec vs Jan works
+    }
+    renderTimeline();
+    renderTray();
+  }
+
+  function setCmpMode(on) {
+    state.cmp.on = on;
+    $('btnCmpMode').classList.toggle('toggled', on);
+    $('btnCmpMode').setAttribute('aria-pressed', String(on));
+    if (!on) { state.cmp.picks = []; state.cmp.info = {}; }
+    renderTimeline();
+    renderTray();
+  }
+
+  function renderTray() {
+    const tray = $('cmpTray');
+    const [a, b] = sortedPicks();
+    const show = state.cmp.on || state.cmp.picks.length > 0;
+    tray.hidden = !show;
+    document.body.classList.toggle('cmp-tray-open', show);
+    if (!show) return;
+    const withYear = !!(a && b && a.slice(0, 4) !== b.slice(0, 4));
+    const slot = (ds, ph) => ds
+      ? `<span class="cmp-slot">${esc(prettyDate(ds, withYear))}</span>`
+      : `<span class="cmp-slot empty">${ph}</span>`;
+    tray.innerHTML = slot(a, 'Pick a day') + '<i data-lucide="arrow-left-right"></i>' + slot(b, 'Pick another day')
+      + `<button class="btn primary" id="cmpGo" type="button" ${a && b ? '' : 'disabled'}><i data-lucide="columns-2"></i> Compare</button>`
+      + '<button class="btn icon-btn" id="cmpClear" type="button" aria-label="Cancel compare" title="Cancel compare"><i data-lucide="x"></i></button>';
+    icons();
+  }
+
+  function openCompare() {
+    const [a, b] = sortedPicks();
+    if (!a || !b) return;
+    state.lb.pairLeft = a;
+    state.lb.compare = false;
+    openLightbox(b);
+  }
+
+  $('btnCmpMode').addEventListener('click', () => setCmpMode(!state.cmp.on));
+  $('cmpTray').addEventListener('click', (e) => {
+    if (e.target.closest('#cmpGo')) openCompare();
+    else if (e.target.closest('#cmpClear')) setCmpMode(false);
   });
 
   $('selMonth').innerHTML += MONTHS.map((m, i) => `<option value="${i}">${m}</option>`).join('');
-  $('selUrl').addEventListener('change', async (e) => { state.urlId = e.target.value; state.weekIdx = {}; await loadIndex(); });
+  $('selUrl').addEventListener('change', async (e) => {
+    state.urlId = e.target.value; state.weekIdx = {};
+    state.cmp.picks = []; state.cmp.info = {};   // a selection only makes sense within one page
+    renderTray();
+    await loadIndex();
+  });
   $('selYear').addEventListener('change', async (e) => { state.year = Number(e.target.value); state.weekIdx = {}; await loadIndex(); });
   $('selMonth').addEventListener('change', (e) => { state.month = e.target.value; renderTimeline(); });
 
@@ -814,35 +918,47 @@
   function capturedDates() {
     return Object.keys(state.index.days).filter((d) => state.index.days[d].hasImage).sort();
   }
+  function dayInfo(ds) { return state.index.days[ds] || state.cmp.info[ds] || {}; }
+  function dayCol(ds, info) {
+    return `<div class="lb-col"><div class="lb-cap">${esc(prettyDate(ds))}</div><img src="${fileUrl(state.urlId, ds + '.jpg', info.capturedAt)}" alt="Full-page screenshot, ${esc(prettyDate(ds))}"></div>`;
+  }
   function renderLightbox() {
     const ds = state.lb.date;
+    const left = state.lb.pairLeft;              // set when opened from the compare tray
     const u = state.config.urls.find((x) => x.id === state.urlId);
-    const info = state.index.days[ds] || {};
+    const info = dayInfo(ds);
     const bm = state.index.benchmark;
     const list = capturedDates();
     const i = list.indexOf(ds);
 
     $('lbTitle').textContent = u ? u.label : '';
-    $('lbMeta').textContent = `${prettyDate(ds)}${info.capturedAt ? ' at ' + new Date(info.capturedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}${info.truncated ? ' · clipped at 15,000 px' : ''}`;
+    const time = info.capturedAt ? ' at ' + new Date(info.capturedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+    const clip = info.truncated ? ' · clipped at 15,000 px' : '';
+    $('lbMeta').textContent = left ? `${prettyDate(left)} ↔ ${prettyDate(ds)}${time}${clip}` : `${prettyDate(ds)}${time}${clip}`;
     $('lbPill').innerHTML = info.ok
       ? `<span class="pill ok">HTTP ${esc(info.httpStatus)}</span>`
       : `<span class="pill err">${esc(info.error || 'Error')}</span>`;
-    $('lbPrev').disabled = i <= 0;
+    $('lbPrev').disabled = i <= 0;               // ‹ › step the right-hand (newer) side; left stays pinned
     $('lbNext').disabled = i < 0 || i >= list.length - 1;
-    $('lbCompare').disabled = !bm;
-    $('lbCompare').classList.toggle('toggled', state.lb.compare && !!bm);
+
+    // In date-pair mode the existing Compare button becomes the way back to a single view.
+    $('lbCompare').disabled = !left && !bm;
+    $('lbCompare').classList.toggle('toggled', !!left || (state.lb.compare && !!bm));
+    $('lbCompare').lastChild.textContent = left ? ' Exit compare' : ' Compare with benchmark';
+
     const isBm = bm && bm.sourceDate === ds;
     $('lbSetBm').disabled = !!isBm;
     $('lbSetBm').lastChild.textContent = isBm ? ' This is the benchmark' : ' Make this the benchmark';
     $('lbOpen').href = fileUrl(state.urlId, ds + '.jpg', info.capturedAt);
 
-    const day = `<div class="lb-col"><div class="lb-cap">${esc(prettyDate(ds))}</div><img src="${fileUrl(state.urlId, ds + '.jpg', info.capturedAt)}" alt="Full-page screenshot, ${esc(prettyDate(ds))}"></div>`;
-    const showCompare = state.lb.compare && bm;
-    const bmCol = showCompare
-      ? `<div class="lb-col"><div class="lb-cap">Benchmark · ${esc(prettyDate(bm.sourceDate || ''))}</div><img src="${fileUrl(state.urlId, 'benchmark.jpg', bm.setAt || bm.capturedAt)}" alt="Benchmark screenshot"></div>`
-      : '';
-    $('lbBody').classList.toggle('compare', !!showCompare);
-    $('lbBody').innerHTML = showCompare ? bmCol + day : day;
+    let leftCol = '';
+    if (left) {
+      leftCol = dayCol(left, dayInfo(left));
+    } else if (state.lb.compare && bm) {
+      leftCol = `<div class="lb-col"><div class="lb-cap">Benchmark · ${esc(prettyDate(bm.sourceDate || ''))}</div><img src="${fileUrl(state.urlId, 'benchmark.jpg', bm.setAt || bm.capturedAt)}" alt="Benchmark screenshot"></div>`;
+    }
+    $('lbBody').classList.toggle('compare', !!leftCol);
+    $('lbBody').innerHTML = leftCol + dayCol(ds, info);
   }
   function openLightbox(ds) {
     state.lb.date = ds;
@@ -851,7 +967,7 @@
     $('lbBody').scrollTop = 0;
     $('lbClose').focus();
   }
-  function closeLightbox() { $('lb').classList.remove('show'); }
+  function closeLightbox() { $('lb').classList.remove('show'); state.lb.pairLeft = null; }
   function step(dir) {
     const list = capturedDates();
     const i = list.indexOf(state.lb.date) + dir;
@@ -861,7 +977,11 @@
   $('lb').addEventListener('click', (e) => { if (e.target === $('lb')) closeLightbox(); });
   $('lbPrev').addEventListener('click', () => step(-1));
   $('lbNext').addEventListener('click', () => step(1));
-  $('lbCompare').addEventListener('click', () => { state.lb.compare = !state.lb.compare; renderLightbox(); });
+  $('lbCompare').addEventListener('click', () => {
+    if (state.lb.pairLeft) state.lb.pairLeft = null;   // Exit compare → single view of the right-hand date
+    else state.lb.compare = !state.lb.compare;
+    renderLightbox();
+  });
   $('lbSetBm').addEventListener('click', async () => {
     try {
       await api('/api/snapshots/benchmark', { method: 'POST', body: JSON.stringify({ urlId: state.urlId, date: state.lb.date }) });
