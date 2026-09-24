@@ -3,8 +3,7 @@ const path = require('path');
 const { chromium } = require('playwright');
 const { diffHtml } = require('./diff-utils');
 const { crawlSite, renderUrlList } = require('./crawler');
-const { checkPageLinks, createLinkChecker } = require('./linkcheck');
-const { getUserAgent, DEFAULT_HEADERS, HostThrottle, pageBlockInfo, hostOf } = require('./politeness');
+const { checkPageLinks } = require('./linkcheck');
 const { runLighthouse } = require('./lighthouse-check');
 const {
   renderPdfFromHtml,
@@ -598,7 +597,8 @@ app.post('/api/crawl/:slot', async (req, res) => {
   }
 
   const commonOpts = {
-    userAgent: process.env.CRAWLER_USER_AGENT || undefined, /* politeness-patch:ua */
+    userAgent: process.env.CRAWLER_USER_AGENT ||
+      `SiteDiffInspectorBot/1.0 (+internal QA tool; contact: ${process.env.CONTACT_EMAIL || 'set CONTACT_EMAIL env var'})`,
     registerStop: (stopFn) => { activeStop[slot] = stopFn; },
     onProgress: ({ found, total, pages }) => {
       if (crawlGeneration[slot] !== myGen) return; // superseded — ignore stale updates
@@ -749,8 +749,7 @@ app.post('/api/test', async (req, res) => {
 
   try {
     browser = await chromium.launch();
-    const context = await browser.newContext({ userAgent: await getUserAgent(), extraHTTPHeaders: DEFAULT_HEADERS, locale: 'en-US' }); /* politeness-patch:test-context */
-    const testThrottle = new HostThrottle({ baseCooldownMs: 15000, abortAfter: 3 });
+    const context = await browser.newContext();
 
     for (const { benchPage, candPage } of pairs) {
 
@@ -764,17 +763,11 @@ app.post('/api/test', async (req, res) => {
       let benchAssets = new Set(), candAssets = new Set();
       let benchTitle = '', candTitle = '';
 
-      let benchBlock = null, candBlock = null; /* politeness-patch:block-vars */
-
       try {
         const p1 = await context.newPage();
-        await testThrottle.waitFor(benchPage.url); /* politeness-patch:bench-goto */
         const r1 = await p1.goto(benchPage.url, { waitUntil: 'networkidle', timeout: 15000 });
         benchStatus = r1 ? r1.status() : 0;
         benchOk = !!r1 && r1.ok();
-        benchBlock = await pageBlockInfo(p1, r1);
-        testThrottle.record(benchPage.url, benchBlock);
-        if (benchBlock) benchOk = false;
         // Visible text only — this is what a reader actually sees. Tracking
         // scripts, GTM containers, ad iframes, and other injected noise are
         // invisible (display:none, empty script/iframe tags), so this sidesteps
@@ -791,13 +784,9 @@ app.post('/api/test', async (req, res) => {
 
       try {
         const p2 = await context.newPage();
-        await testThrottle.waitFor(candPage.url); /* politeness-patch:cand-goto */
         const r2 = await p2.goto(candPage.url, { waitUntil: 'networkidle', timeout: 15000 });
         candStatus = r2 ? r2.status() : 0;
         candOk = !!r2 && r2.ok();
-        candBlock = await pageBlockInfo(p2, r2);
-        testThrottle.record(candPage.url, candBlock);
-        if (candBlock) candOk = false;
         candText = await p2.evaluate(() => (document.body ? document.body.innerText : '')).catch(() => '');
         candLinks = await extractPageLinks(p2, candPage.url);
         candAssets = await extractPageAssets(p2, candPage.url);
@@ -824,13 +813,7 @@ app.post('/api/test', async (req, res) => {
 
       let status, detail, broken = [], diffSnippet = null;
 
-      let blocked = false; /* politeness-patch:blocked-status */
-      if (benchBlock || candBlock) {
-        status = 'red';
-        blocked = true;
-        const whomBlocked = benchBlock && candBlock ? 'Both pages were' : benchBlock ? 'Benchmark page was' : 'Candidate page was';
-        detail = `${whomBlocked} blocked by bot protection (${(candBlock || benchBlock).reason}), so content was not compared. This is not a content change.`;
-      } else if (!benchOk || !candOk) {
+      if (!benchOk || !candOk) {
         status = 'red';
         const whom = !benchOk && !candOk ? 'Both pages' : !benchOk ? 'Benchmark page' : 'Candidate page';
         detail = `${whom} unreachable (HTTP ${!benchOk ? benchStatus || 'error' : candStatus || 'error'}).`;
@@ -880,14 +863,9 @@ app.post('/api/test', async (req, res) => {
         broken,
         diffSnippet,
         assetDiff,
-        blocked, /* politeness-patch:blocked-field */
       });
       testState.done = results.length;
       testState.results = results.slice();
-      if (testThrottle.shouldAbort(benchPage.url) || testThrottle.shouldAbort(candPage.url)) { /* politeness-patch:test-abort */
-        const blockedHost = testThrottle.shouldAbort(candPage.url) ? hostOf(candPage.url) : hostOf(benchPage.url);
-        throw new Error(`Stopped early: ${blockedHost} blocked the tester 3 times in a row (bot protection). Results so far are kept. If you control this site, allowlist the tool's User-Agent (contains "SiteDiffInspector") in its WAF.`);
-      }
     }
   } catch (e) {
     logErr('test run failed', e);
@@ -956,7 +934,7 @@ async function captureFullPage(url) {
   let browser;
   try {
     browser = await chromium.launch();
-    const page = await browser.newPage({ userAgent: await getUserAgent(), extraHTTPHeaders: DEFAULT_HEADERS, locale: 'en-US' }); /* politeness-patch:capture-page */
+    const page = await browser.newPage();
     const resp = await page.goto(url, { waitUntil: 'networkidle', timeout: 20000 });
     const ok = !!resp && resp.ok();
     const html = await page.content().catch(() => '');
@@ -1055,7 +1033,6 @@ app.post('/api/analysis/linkscan', async (req, res) => {
   }
 
   const pages = Array.from(site.pages.values());
-  const linkChecker = createLinkChecker(); /* politeness-patch:link-checker */
   linkScanRunning = true;
   linkScanState.status = 'running';
   linkScanState.done = 0;
@@ -1067,16 +1044,13 @@ app.post('/api/analysis/linkscan', async (req, res) => {
     for (const page of pages) {
       // Same politeness pacing as everywhere else in this app.
       await new Promise((r) => setTimeout(r, 300));
-      if (linkChecker.isHostBlocked(page.url)) { /* politeness-patch:link-scan */
-        linkScanState.results[page.path] = { checked: 0, broken: ['Skipped: this site kept blocking the scanner (bot protection), so the scan stopped requesting it.'], unverified: [], status: 'red', blocked: true };
-        linkScanState.done += 1;
-        continue;
-      }
       try {
-        const linkResult = await withTimeout(linkChecker.checkPageLinks(page.url, 50), 120000, `Link scan for ${page.url}`);
-        linkScanState.results[page.path] = linkResult.pageBlocked
-          ? { checked: 0, broken: [`Page blocked by bot protection (${linkResult.blockReason}), links not checked.`], unverified: [], status: 'red', blocked: true }
-          : { checked: linkResult.checked, broken: linkResult.broken, unverified: linkResult.unverified || [], status: linkResult.broken.length > 0 ? 'red' : 'green' };
+        const linkResult = await withTimeout(checkPageLinks(page.url, 50), 45000, `Link scan for ${page.url}`);
+        linkScanState.results[page.path] = {
+          checked: linkResult.checked,
+          broken: linkResult.broken,
+          status: linkResult.broken.length > 0 ? 'red' : 'green',
+        };
       } catch (e) {
         logErr(`link scan failed for ${page.url}`, e);
         linkScanState.results[page.path] = {
@@ -1096,7 +1070,6 @@ app.post('/api/analysis/linkscan', async (req, res) => {
       pages.forEach((p) => {
         const r = linkScanState.results[p.path];
         if (!r) return;
-        if (r.blocked) return; /* politeness-patch:ai-count */
         if (r.status === 'red') {
           broken++;
           if (brokenSamples.length < 15) brokenSamples.push({ path: p.path, brokenLinks: r.broken });
@@ -1622,9 +1595,6 @@ app.get('/api/report/analysis.pdf', async (req, res) => {
   }
 });
 
-const { mountSnapshots } = require('./snapshots');
-   mountSnapshots(app, { logErr });
-   
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Site Diff Inspector running at http://localhost:${PORT}`);

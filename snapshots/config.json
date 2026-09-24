@@ -1,0 +1,30 @@
+{
+  "urls": [
+    {
+      "id": "u-muezyvkw-y21n",
+      "url": "https://contentbloom.com/",
+      "label": "CB Home Page",
+      "addedAt": "2026-09-24T03:53:40.448Z"
+    },
+    {
+      "id": "u-muf05w6y-4d3r",
+      "url": "https://contentbloom.com/services/strategy/",
+      "label": "CB Services",
+      "addedAt": "2026-09-24T03:59:07.834Z"
+    },
+    {
+      "id": "u-muf05w6y-zpcb",
+      "url": "https://contentbloom.com/partners/",
+      "label": "CB Partners",
+      "addedAt": "2026-09-24T03:59:07.834Z"
+    },
+    {
+      "id": "u-muf05w6y-brax",
+      "url": "https://contentbloom.com/blog/",
+      "label": "CB Blogs",
+      "addedAt": "2026-09-24T03:59:07.834Z"
+    }
+  ],
+  "captureTime": "04:01",
+  "retentionDays": 400
+}

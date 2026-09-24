@@ -164,7 +164,7 @@ function buildDiffCsv({ results, benchOrigin, candOrigin, benchPages, candPages,
       rows.push([
         r.benchPath,
         r.candPath,
-        (r.blocked ? 'Blocked' : r.status === 'green' ? 'Equal' : r.status === 'red' ? 'Changed' : 'Links Differ'),
+        r.status === 'green' ? 'Equal' : r.status === 'red' ? 'Changed' : 'Links Differ',
         r.detail,
         r.benchUrl,
         r.candUrl,
@@ -206,7 +206,7 @@ function buildDiffPdfHtml({ results, benchOrigin, candOrigin, benchPages, candPa
          <thead><tr><th style="width:26%">Path</th><th style="width:11%">Status</th><th>Detail</th></tr></thead>
          <tbody>${results
            .map((r) => {
-             const label = (r.blocked ? 'Blocked' : r.status === 'green' ? 'Equal' : r.status === 'red' ? 'Changed' : 'Links Differ');
+             const label = r.status === 'green' ? 'Equal' : r.status === 'red' ? 'Changed' : 'Links Differ';
              const pathCell = r.benchPath === r.candPath
                ? escapeHtml(r.benchPath)
                : `${escapeHtml(r.benchPath)} &rarr; ${escapeHtml(r.candPath)}`;
@@ -253,7 +253,7 @@ function analysisSummary(pages, linkResults, lhResults) {
   let linkScanned = 0, broken = 0, clean = 0;
   (pages || []).forEach((p) => {
     const r = (linkResults || {})[p.path];
-    if (r) { linkScanned++; if (r.blocked) { /* blocked: neither broken nor clean */ } else if (r.status === 'red') broken++; else clean++; }
+    if (r) { linkScanned++; if (r.status === 'red') broken++; else clean++; }
   });
   const lhEntries = Object.values(lhResults || {});
   const mobileScores = lhEntries.map((r) => r.mobile && r.mobile.score).filter((s) => typeof s === 'number');
@@ -310,7 +310,7 @@ function buildAnalysisCsv({ pages, linkResults, lhResults, siteOrigin, aiSummari
       p.title,
       p.path,
       p.url,
-      link ? (link.blocked ? 'Blocked' : link.status === 'green' ? 'OK' : 'Broken') : 'Not scanned',
+      link ? (link.status === 'green' ? 'OK' : 'Broken') : 'Not scanned',
       link && link.broken ? link.broken.join(' | ') : '',
       lh.mobile && typeof lh.mobile.score === 'number' ? lh.mobile.score : '',
       lh.mobile && lh.mobile.error ? lh.mobile.error : '',
@@ -334,9 +334,7 @@ function buildAnalysisPdfHtml({ pages, linkResults, lhResults, siteOrigin, aiSum
     .map((p) => {
       const link = (linkResults || {})[p.path];
       const lh = (lhResults || {})[p.path] || {};
-      const linkCell = link && link.blocked
-        ? '<span class="pill amber">Blocked</span>'
-        : link
+      const linkCell = link
         ? link.status === 'green'
           ? '<span class="pill green">OK</span>'
           : `<span class="pill red">Broken (${(link.broken || []).length})</span>`

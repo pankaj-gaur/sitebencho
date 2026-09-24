@@ -62,8 +62,8 @@
   }
 
   svg.lucide {
-    width: 14px;
-    height: 14px;
+    width: 15px;
+    height: 15px;
     vertical-align: -2px;
     display: inline-block;
   }
@@ -358,20 +358,37 @@
     color: var(--miti-muted);
     border-color: var(--miti-border);
   }
+
+  /* Header toolbar — identical to Site Parity / Site Analysis */
+  .toolbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 18px; flex-wrap: wrap; }
+  .pages-field { border-radius: var(--radius-pill); display: inline-flex; align-items: center; gap: 10px; border: 1px solid var(--miti-border); background: var(--miti-white); padding: 6px 14px 6px 16px; box-shadow: var(--shadow-sm); }
+  .pages-field span { font-family: var(--font-roboto); font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--miti-ink-soft); white-space: nowrap; }
+  .pages-field input { border-radius: var(--radius-sm); font-family: var(--font-mono); font-size: 13px; font-weight: 600; color: var(--miti-ink); width: 68px; text-align: center; padding: 5px 4px; border: 1px solid var(--miti-border); background: var(--miti-canvas); }
+  /* Invisible: reserves the same space as the Max Pages box so the nav
+     sits in exactly the same place as on the other pages. */
+  .pages-field.spacer { visibility: hidden; }
+  .pages-field.spacer input { box-sizing: border-box; height: 37px; padding: 10px 12px; }  /* same box as the real Max Pages input */
 </style>
 </head>
 <body>
 <div class="site-wrap">
 <!-- Header -->
-<header class="miti-header" style="display: flex; align-items: center; justify-content: space-between; gap: 24px; padding-bottom: 20px; border-bottom: 1px solid var(--miti-border); margin-bottom: 28px; position: relative;">
+<header class="miti-header">
 <div class="brand-badge">
 <img alt="Miti" class="brand-logo" src="miti-logo.png">
 </div>
-<nav aria-label="Primary navigation" class="nav" style="margin-left: auto; display: inline-flex; background: rgb(255, 255, 255); border: 1px solid rgb(216, 214, 207); border-radius: 999px; padding: 4px; box-shadow: rgba(21, 21, 21, 0.05) 0px 1px 3px;">
-<a href="index.html" class=""><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="layers" aria-hidden="true" class="lucide lucide-layers"><path d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83z"></path><path d="M2 12a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 12"></path><path d="M2 17a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 17"></path></svg> Site Parity</a>
-<a href="analysis.html" class=""><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="activity" aria-hidden="true" class="lucide lucide-activity"><path d="M22 12h-2.48a2 2 0 0 0-1.93 1.46l-2.35 8.36a.25.25 0 0 1-.48 0L9.24 2.18a.25.25 0 0 0-.48 0l-2.35 8.36A2 2 0 0 1 4.49 12H2"></path></svg> Site Analysis</a>
+<div class="toolbar" style="margin-bottom:0;">
+<nav aria-label="Primary navigation" class="nav">
+<a href="index.html"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="layers" aria-hidden="true" class="lucide lucide-layers"><path d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83z"></path><path d="M2 12a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 12"></path><path d="M2 17a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 17"></path></svg> Site Parity</a>
+<a href="analysis.html"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="activity" aria-hidden="true" class="lucide lucide-activity"><path d="M22 12h-2.48a2 2 0 0 0-1.93 1.46l-2.35 8.36a.25.25 0 0 1-.48 0L9.24 2.18a.25.25 0 0 0-.48 0l-2.35 8.36A2 2 0 0 1 4.49 12H2"></path></svg> Site Analysis</a>
+<a href="snapshots.html"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="camera" aria-hidden="true" class="lucide lucide-camera"><path d="M13.997 4a2 2 0 0 1 1.76 1.05l.486.9A2 2 0 0 0 18.003 7H20a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h1.997a2 2 0 0 0 1.759-1.048l.489-.904A2 2 0 0 1 10.004 4z"></path><circle cx="12" cy="13" r="3"></circle></svg> Daily Snapshots</a>
 <a class="active" href="history.html"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="history" aria-hidden="true" class="lucide lucide-history"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path><path d="M12 7v5l4 2"></path></svg> History</a>
 </nav>
+<div class="pages-field spacer" aria-hidden="true">
+<span>Max Pages to Scan</span>
+<input tabindex="-1" disabled type="text" value="200">
+</div>
+</div>
 </header>
 <!-- Masthead -->
 <div class="masthead">

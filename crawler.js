@@ -1,4 +1,5 @@
 const { PlaywrightCrawler, RequestQueue, log } = require('crawlee');
+const { getUserAgent, DEFAULT_HEADERS, FETCH_HEADERS, HostThrottle, pageBlockInfo, hostOf } = require('./politeness');
 
 log.setLevel(log.LEVELS.ERROR); // keep Crawlee's own logging quiet; the API layer reports progress
 
@@ -10,9 +11,16 @@ function normalizePath(rawUrl) {
   return p + url.search;
 }
 
-async function fetchText(url) {
+async function fetchText(url, userAgent) {
   try {
-    const res = await fetch(url, { redirect: 'follow' });
+    const ua = userAgent || (await getUserAgent());
+    const res = await fetch(url, {
+      redirect: 'follow',
+      // Same identity as the browser crawl — previously this went out with
+      // Node's default "node" UA and no Accept headers, which some WAFs block
+      // outright before the crawl even starts.
+      headers: { ...FETCH_HEADERS, Accept: 'application/xml,text/xml;q=0.9,*/*;q=0.8', 'User-Agent': ua },
+    });
     if (!res.ok) {
       console.warn(`[crawl] sitemap fetch ${url} returned HTTP ${res.status}`);
       return null;
@@ -34,14 +42,14 @@ function extractLocs(xml) {
  * linked in nav/footer). This walks sitemap.xml / sitemap_index.xml (including
  * nested sitemaps, up to a couple levels deep) and returns every page URL listed.
  */
-async function getSitemapUrls(origin, { maxUrls = 500, maxSubSitemaps = 25 } = {}) {
+async function getSitemapUrls(origin, { maxUrls = 500, maxSubSitemaps = 25, userAgent } = {}) {
   const seenSitemaps = new Set();
   const urls = new Set();
 
   async function processSitemap(url, depth) {
     if (seenSitemaps.has(url) || seenSitemaps.size >= maxSubSitemaps || urls.size >= maxUrls) return;
     seenSitemaps.add(url);
-    const xml = await fetchText(url);
+    const xml = await fetchText(url, userAgent);
     if (!xml) return;
 
     const locs = extractLocs(xml);
@@ -53,6 +61,8 @@ async function getSitemapUrls(origin, { maxUrls = 500, maxSubSitemaps = 25 } = {
     if (depth < 2) {
       for (const sm of subSitemaps) {
         if (urls.size >= maxUrls) break;
+        // Small gap between sitemap files — no reason to burst these either.
+        await new Promise((r) => setTimeout(r, 300));
         await processSitemap(sm, depth + 1);
       }
     }
@@ -69,19 +79,13 @@ async function getSitemapUrls(origin, { maxUrls = 500, maxSubSitemaps = 25 } = {
 /**
  * Shared crawling core used by both discovery-based site crawls and explicit
  * URL-list rendering — all the stability hardening (politeness pacing,
- * browser recycling, /dev/shm fix, stall watchdog, memory logging) lives
- * here once instead of being duplicated per mode.
+ * browser recycling, /dev/shm fix, stall watchdog, memory logging, WAF
+ * back-off) lives here once instead of being duplicated per mode.
  *
  * When `discover` is true, same-domain links found on each rendered page are
  * enqueued for further crawling (site-crawl mode). When false, ONLY the
  * URLs in `startRequests` are ever visited — nothing is followed beyond
  * that list (explicit URL-list mode).
- *
- * `startRequests` entries may be plain URL strings, or Crawlee request
- * objects ({ url, userData }) — the latter is used by renderUrlList() below
- * to stamp each request with its original list position (userData.origIndex),
- * since queue concurrency means pages don't necessarily finish rendering in
- * the order they were submitted.
  */
 async function runPlaywrightCrawl(startRequests, {
   maxPages,
@@ -117,16 +121,56 @@ async function runPlaywrightCrawl(startRequests, {
   const queueName = `q-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
   const requestQueue = await RequestQueue.open(queueName);
 
-  const ua = userAgent || 'SiteDiffInspectorBot/1.0 (+internal QA tool; contact: set CONTACT_EMAIL env var)';
+  // Normal Chrome UA + "SiteDiffInspector/1.0 (+contact)" — see politeness.js.
+  const ua = userAgent || (await getUserAgent());
 
   const STALL_MS = 60_000; // no progress for 60s -> assume blocked/crashed and stop
   let watchdogTimer = null;
+
+  // WAF back-off state for this run. On a detected block the whole crawler
+  // PAUSES (no new pages start) for a cooldown — Retry-After if the site sent
+  // one, else 15s, 30s, 60s... — and after 3 blocks in a row from the same
+  // host the crawl stops instead of continuing to hit a site that has
+  // clearly said no.
+  const throttle = new HostThrottle({ baseCooldownMs: 15_000, abortAfter: 3 });
+  let pausedUntil = 0;
+  let resumeTimer = null;
+  let blockAbort = null;
+  let crawler = null;
+
+  function pauseCrawlerFor(ms) {
+    const pool = crawler && crawler.autoscaledPool;
+    if (!pool) return;
+    const until = Date.now() + ms;
+    if (until <= pausedUntil) return;
+    pausedUntil = until;
+    // Not awaited on purpose: pause() resolves only once running tasks finish,
+    // and it's being called FROM a running task.
+    pool.pause().catch(() => {});
+    clearTimeout(resumeTimer);
+    resumeTimer = setTimeout(() => {
+      pausedUntil = 0;
+      lastActivity = Date.now();
+      pool.resume();
+    }, ms);
+  }
+
+  // crawler.stop() can't take effect while the pool is paused (a paused pool
+  // never re-checks whether it's finished), so un-pause as part of stopping.
+  function stopCrawler(reason) {
+    crawler.stop(reason);
+    if (pausedUntil > 0) {
+      clearTimeout(resumeTimer);
+      pausedUntil = 0;
+      if (crawler.autoscaledPool) crawler.autoscaledPool.resume();
+    }
+  }
 
   try {
     let total = startRequests.length;
     report(total);
 
-    const crawler = new PlaywrightCrawler({
+    crawler = new PlaywrightCrawler({
       requestQueue,
       maxRequestsPerCrawl: Math.max(maxPages || 0, startRequests.length),
       // Polite by default: low concurrency + a rate cap. WAFs flag bursts of
@@ -137,6 +181,27 @@ async function runPlaywrightCrawl(startRequests, {
       requestHandlerTimeoutSecs: 30,
       navigationTimeoutSecs: 25,
       maxRequestRetries: 1,
+
+      // One session for the whole crawl, with its cookies carried over even
+      // when the browser is recycled every 40 pages. Before, each recycle
+      // wiped cookies, so the site saw a brand-new visitor over and over —
+      // any WAF clearance or consent cookie it had set was thrown away.
+      useSessionPool: true,
+      persistCookiesPerSession: true,
+      sessionPoolOptions: {
+        maxPoolSize: 1,
+        // Blocks are detected and handled below (cooldown / stop); don't let
+        // Crawlee silently rotate sessions on 401/403/429 instead.
+        blockedStatusCodes: [],
+        sessionOptions: { maxUsageCount: 100_000, maxErrorScore: 20 },
+      },
+
+      preNavigationHooks: [
+        async ({ page }) => {
+          await page.setExtraHTTPHeaders(DEFAULT_HEADERS);
+        },
+      ],
+
       browserPoolOptions: {
         useFingerprints: false, // no fingerprint spoofing — identify honestly instead
         // Recycle the Chromium instance periodically. Long-running headless
@@ -161,8 +226,31 @@ async function runPlaywrightCrawl(startRequests, {
           ],
         },
       },
-      async requestHandler({ request, page, enqueueLinks }) {
+      async requestHandler({ request, page, response, enqueueLinks }) {
         await page.waitForLoadState('networkidle', { timeout: 8000 }).catch(() => {});
+
+        // WAF / bot-protection check BEFORE treating this as a real page — a
+        // challenge page must not end up in the page list (it would then
+        // "differ" from everything in the test phase).
+        const block = await pageBlockInfo(page, response);
+        const cooldown = throttle.record(request.url, block);
+        if (block) {
+          const host = hostOf(request.url);
+          lastError = `${request.url} — blocked by bot protection (${block.reason})`;
+          if (throttle.shouldAbort(request.url)) {
+            blockAbort = `${host} blocked ${throttle.strikes(request.url)} requests in a row (${block.reason})`;
+            console.error(`[crawl] ${blockAbort} — stopping crawl.`);
+            request.noRetry = true;
+            stopCrawler(`Stopped — ${blockAbort}`);
+          } else {
+            console.warn(`[crawl] ${lastError}; pausing ${Math.round(cooldown / 1000)}s before continuing.`);
+            pauseCrawlerFor(cooldown);
+          }
+          report(total);
+          // Throwing sends the request back for its one retry, which runs
+          // after the cooldown above.
+          throw new Error(`Blocked by bot protection (${block.reason})`);
+        }
 
         const loadedUrl = request.loadedUrl || request.url;
         const pathKey = normalizePath(loadedUrl);
@@ -176,10 +264,7 @@ async function runPlaywrightCrawl(startRequests, {
         // every crawled page here was pure memory bloat with no reader,
         // and on a several-hundred-page site that's enough to exhaust
         // Node's memory and crash or stall the process.
-        const origIndex = request.userData && typeof request.userData.origIndex === 'number'
-          ? request.userData.origIndex
-          : undefined;
-        pages.set(pathKey, { title, url: loadedUrl, path: pathKey, ...(origIndex !== undefined ? { origIndex } : {}) });
+        pages.set(pathKey, { title, url: loadedUrl, path: pathKey });
 
         if (pages.size % 25 === 0) {
           const mb = Math.round(process.memoryUsage().rss / 1024 / 1024);
@@ -212,7 +297,7 @@ async function runPlaywrightCrawl(startRequests, {
     // detached from the UI, silently consuming resources and request budget
     // against the target site.
     if (registerStop) {
-      registerStop(() => crawler.stop('Cancelled — superseded by a newer crawl request for this slot'));
+      registerStop(() => stopCrawler('Cancelled — superseded by a newer crawl request for this slot'));
     }
 
     // Stall watchdog: if nothing has happened for STALL_MS, something MIGHT be
@@ -224,7 +309,9 @@ async function runPlaywrightCrawl(startRequests, {
     // page hangs are already bounded by requestHandlerTimeoutSecs (30s), so a
     // genuine silent gap this long almost always means the queue is empty and
     // the crawl is finishing, not stuck — check that before failing anything.
+    // A deliberate WAF cooldown pause is not a stall either.
     watchdogTimer = setInterval(async () => {
+      if (Date.now() < pausedUntil) return;
       if (Date.now() - lastActivity <= STALL_MS || watchdogFired) return;
 
       let queueEmpty = false;
@@ -239,14 +326,24 @@ async function runPlaywrightCrawl(startRequests, {
 
       watchdogFired = true;
       console.error(`[crawl] stalled after ${pages.size} page(s) — no progress for ${STALL_MS / 1000}s, stopping.`);
-      crawler.stop(`Stalled — no progress for ${STALL_MS / 1000}s`);
+      stopCrawler(`Stalled — no progress for ${STALL_MS / 1000}s`);
     }, 5000);
 
     await crawler.run(startRequests);
     await crawler.teardown();
   } finally {
     if (watchdogTimer) clearInterval(watchdogTimer);
+    clearTimeout(resumeTimer);
     await requestQueue.drop().catch(() => {});
+  }
+
+  if (blockAbort) {
+    throw new Error(
+      `Crawl stopped after finding ${pages.size} page(s): ${blockAbort}. ` +
+        `The site's bot protection is refusing this tool. If you control the site, ask whoever manages its ` +
+        `firewall/WAF to allowlist this tool's User-Agent (contains "SiteDiffInspector") or your outbound IP. ` +
+        `If you don't control it, get permission first rather than retrying.`
+    );
   }
 
   if (watchdogFired) {
@@ -280,13 +377,14 @@ async function runPlaywrightCrawl(startRequests, {
  */
 async function crawlSite(startUrl, { maxPages = 500, requestsPerMinute = 20, userAgent, onProgress, registerStop } = {}) {
   const origin = new URL(startUrl).origin;
-  const sitemapUrls = await getSitemapUrls(origin, { maxUrls: maxPages });
+  const ua = userAgent || (await getUserAgent());
+  const sitemapUrls = await getSitemapUrls(origin, { maxUrls: maxPages, userAgent: ua });
   const startRequests = Array.from(new Set([startUrl, ...sitemapUrls])).slice(0, maxPages);
 
   const { pages } = await runPlaywrightCrawl(startRequests, {
     maxPages,
     requestsPerMinute,
-    userAgent,
+    userAgent: ua,
     onProgress,
     registerStop,
     discover: true,
@@ -297,94 +395,26 @@ async function crawlSite(startUrl, { maxPages = 500, requestsPerMinute = 20, use
 }
 
 /**
- * Renders EXACTLY the given URLs with a real headless browser (so titles
- * and client-rendered content are accurate) — but unlike crawlSite(), never
- * seeds from a sitemap and never follows links found on the page
- * (discover:false is passed through to runPlaywrightCrawl). This is what
- * powers "Use a URL list" mode: the person told us precisely which pages
- * they want checked, so the render is restricted to just those pages — no
- * sitemap lookup, no link-following, nothing added or removed beyond what
- * was pasted/uploaded.
- *
- * Order is preserved and NOT deduplicated by path — needed for Diff
- * Inspector's position pairing, where the Nth benchmark URL always
- * corresponds to the Nth candidate URL (which may share a normalized path
- * across two different domains, e.g. both "/").
- *
- * Returns { origin, pages: Map<key, {title, url, path}>, invalidCount } —
- * same shape crawlSite() returns, so callers don't need to know which path
- * produced it. The Map key is `${index}::${path}` (not the bare path),
- * matching the old registerUrlList() behavior, so two different domains
- * that happen to share a path stay distinct entries.
- */
-async function renderUrlList(urls, { maxPages = 500, requestsPerMinute = 20, userAgent, onProgress, registerStop } = {}) {
-  const HARD_CEILING = Math.min(maxPages || 500, 500);
-  const validUrls = [];
-  let invalidCount = 0;
-
-  (urls || []).forEach((raw) => {
-    const candidate = String(raw || '').trim();
-    if (!candidate) return;
-    if (validUrls.length >= HARD_CEILING) return;
-    try {
-      const parsed = new URL(candidate);
-      if (!/^https?:$/.test(parsed.protocol)) throw new Error('not http(s)');
-      validUrls.push(parsed.href);
-    } catch (e) {
-      invalidCount += 1;
-    }
-  });
-
-  if (validUrls.length === 0) {
-    throw new Error(
-      `No valid URLs found in the list provided.${invalidCount ? ` ${invalidCount} line(s) could not be parsed as a URL.` : ''}`
-    );
-  }
-
-  const startRequests = validUrls.map((url, i) => ({ url, userData: { origIndex: i } }));
-
-  // discover:false is the whole point of this function — only these exact
-  // URLs are ever visited; nothing found ON them is followed, and no
-  // sitemap is read for any of their origins.
-  const { pages: renderedByPath } = await runPlaywrightCrawl(startRequests, {
-    maxPages: startRequests.length,
-    requestsPerMinute,
-    userAgent,
-    onProgress,
-    registerStop,
-    discover: false,
-    sourceLabel: 'URL list',
-  });
-
-  // Rebuild in original list order (queue concurrency means pages don't
-  // necessarily finish in input order) and re-key by ${index}::${path} so
-  // two different URLs that happen to share a normalized path (e.g. both
-  // "/" on two different domains) stay distinct, position-paired entries —
-  // matching how registerUrlList() used to key its Map.
-  const entries = Array.from(renderedByPath.values())
-    .map((p, fallbackIdx) => ({
-      idx: typeof p.origIndex === 'number' ? p.origIndex : fallbackIdx,
-      page: { title: p.title, url: p.url, path: p.path },
-    }))
-    .sort((a, b) => a.idx - b.idx);
-
-  const pages = new Map(entries.map((e) => [`${e.idx}::${e.page.path}`, e.page]));
-  const origin = new URL(validUrls[0]).origin;
-  return { origin, pages, invalidCount };
-}
-
-/**
  * Registers an EXPLICIT list of URLs exactly as given — no crawling, no
- * rendering, no sitemap lookup, no link discovery. Kept for reference/back-
- * compat only; the app now uses renderUrlList() above instead, so that
- * "Use a URL list" mode gets real rendered titles rather than a path
- * placeholder. Not called anywhere in server.js as of this version.
+ * rendering, no sitemap lookup, no link discovery. The person already told
+ * us precisely which URLs they want; there's nothing left to discover, and
+ * validating a URL string is instant, so this never touches Playwright.
+ * This is what makes "Use a URL list" behave like "Load from history" —
+ * the page list appears immediately, with no crawl step to wait through.
+ *
+ * Deliberately does NOT deduplicate: unlike the old sitemap/discovery path,
+ * this list may be paired position-by-position against another list (Site
+ * Diff's benchmark vs candidate) where entry N always means entry N on both
+ * sides — silently dropping a "duplicate" would shift every later position
+ * out of alignment. Order is preserved exactly as submitted.
  *
  * Returns { origin, pages: Map<key, {title, url, path}>, invalidCount } —
  * same shape crawlSite() returns, so callers don't need to know which path
  * produced it. The Map key is NOT the bare path (two different domains can
  * legitimately share a path, e.g. both have "/") — it's `${index}::${path}`,
- * which stays unique regardless of cross-domain collisions.
+ * which stays unique regardless of cross-domain collisions. Nothing outside
+ * this module ever looks a page up by that key; everything else only ever
+ * iterates .values(), so this is invisible to every other caller.
  */
 function registerUrlList(urls) {
   const HARD_CEILING = 500;
@@ -416,4 +446,4 @@ function registerUrlList(urls) {
   return { origin, pages, invalidCount };
 }
 
-module.exports = { crawlSite, renderUrlList, registerUrlList, normalizePath, getSitemapUrls };
+module.exports = { crawlSite, registerUrlList, normalizePath, getSitemapUrls };

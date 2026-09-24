@@ -861,6 +861,8 @@
   .row-green .pill { background: var(--green-soft); color: var(--green); }
   .row-red .pill { background: var(--red-soft); color: var(--red); }
   .row-amber .pill { background: var(--amber-soft); color: var(--amber); }
+  /* Blocked by WAF / bot protection — not a content change, so not red */
+  .row-blocked .pill { background: #e4edf7; color: #1f5c9e; }
 
   .detail { color: var(--miti-ink-soft); font-size: 12px; margin-top: 3px; line-height: 1.45; }
   .brokenlist {
@@ -1243,6 +1245,7 @@
 <nav aria-label="Primary navigation" class="nav">
 <a class="active" href="index.html"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="layers" aria-hidden="true" class="lucide lucide-layers"><path d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83z"></path><path d="M2 12a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 12"></path><path d="M2 17a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 17"></path></svg> Site Parity</a>
 <a href="analysis.html" class=""><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="activity" aria-hidden="true" class="lucide lucide-activity"><path d="M22 12h-2.48a2 2 0 0 0-1.93 1.46l-2.35 8.36a.25.25 0 0 1-.48 0L9.24 2.18a.25.25 0 0 0-.48 0l-2.35 8.36A2 2 0 0 1 4.49 12H2"></path></svg> Site Analysis</a>
+<a href="snapshots.html"><i data-lucide="camera"></i> Daily Snapshots</a>
 <a href="history.html" class=""><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="history" aria-hidden="true" class="lucide lucide-history"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path><path d="M12 7v5l4 2"></path></svg> History</a>
 </nav>
 <label class="pages-field">
@@ -2041,13 +2044,13 @@ https://example.com/page-3" rows="4"></textarea>
   }
 
   function renderLedger(){
-    const pillFor = s => s === "green" ? "Equal" : (s === "red" ? "Changed" : "Links Differ");
+    const pillFor = r => r.blocked ? "Blocked" : (r.status === "green" ? "Equal" : (r.status === "red" ? "Changed" : "Links Differ"));
     const arrowCellText = (a, b) => a === b
       ? escapeHtml(a)
       : `${escapeHtml(a)} <span style="color:var(--miti-muted);">&rarr;</span> ${escapeHtml(b)}`;
 
     $("ledgerBody").innerHTML = state.results.map((r,i)=>`
-      <tr class="row-${r.status}">
+      <tr class="row-${r.blocked ? "blocked" : r.status}">
         <td class="idx">${i+1}</td>
         <td class="ptitle">${arrowCellText(r.benchTitle || "(untitled)", r.candTitle || "(untitled)")}</td>
         <td class="path-cell">
@@ -2056,7 +2059,7 @@ https://example.com/page-3" rows="4"></textarea>
           <a href="${escapeHtml(r.benchUrl)}" target="_blank" rel="noopener">benchmark ↗</a>
           <a href="${escapeHtml(r.candUrl)}" target="_blank" rel="noopener">candidate ↗</a>
         </td>
-        <td><span class="pill">${pillFor(r.status)}</span></td>
+        <td><span class="pill">${pillFor(r)}</span></td>
         <td>
           <div class="detail">${escapeHtml(r.detail)}</div>
           ${r.broken && r.broken.length ? `<div class="brokenlist">${r.broken.map(escapeHtml).join("<br>")}</div>` : ""}
@@ -2074,8 +2077,10 @@ https://example.com/page-3" rows="4"></textarea>
       </tr>
     `).join("") || `<tr><td colspan="6"><div class="empty">No matching paths between the two sites — nothing to compare yet.</div></td></tr>`;
 
-    const counts = { green:0, red:0, amber:0 };
-    state.results.forEach(r => counts[r.status]++);
+    // Blocked pages are counted separately — a WAF refusing the tester says
+    // nothing about whether the content changed.
+    const counts = { green:0, red:0, amber:0, blocked:0 };
+    state.results.forEach(r => { if(r.blocked) counts.blocked++; else counts[r.status]++; });
     $("statGreen").textContent = counts.green;
     $("statRed").textContent = counts.red;
     $("statAmber").textContent = counts.amber;
@@ -2324,7 +2329,9 @@ https://example.com/page-3" rows="4"></textarea>
       state.results = result.results;
       renderLedger();
       setTestBar(100, "done");
-      progressEl.textContent = `Completed — ${result.results.length} matched page(s) verified.`;
+      const blockedCount = result.results.filter(r => r.blocked).length;
+      progressEl.textContent = `Completed — ${result.results.length} matched page(s) verified.` +
+        (blockedCount ? ` ${blockedCount} page(s) were blocked by the site's bot protection and could not be compared.` : "");
       progressEl.className = "status-line ok";
     }catch(e){
       if(e.partialResults && e.partialResults.length){
