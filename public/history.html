@@ -4,22 +4,24 @@
 <title>Run History</title>
 <link href="https://fonts.googleapis.com" rel="preconnect">
 <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;1,400&amp;family=Roboto:ital,wght@0,300;0,400;0,500;0,700;0,900;1,400;1,500&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;1,400&amp;family=Familjen+Grotesk:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&amp;display=swap" rel="stylesheet">
 <script src="https://unpkg.com/lucide@latest"></script>
 <style>
   :root {
-    --cb-ink: #151515;
-    --cb-ink-soft: #363636;
-    --cb-white: #ffffff;
-    --cb-canvas: #f5f4f0;
-    --cb-surface: #eeece6;
-    --cb-muted: #737373;
-    --cb-border: #d8d6cf;
-    --cb-border-strong: #c2bfb6;
-    --cb-accent: #c7d92f;
-    --cb-accent-strong: #b4c925;
-    --cb-primary: #0085B2;
-    --cb-dark: #111111;
+    --miti-ink: #151515;
+    --miti-ink-soft: #363636;
+    --miti-white: #ffffff;
+    --miti-canvas: #f5f4f0;
+    --miti-surface: #eeece6;
+    --miti-muted: #737373;
+    --miti-border: #d8d6cf;
+    --miti-border-strong: #c2bfb6;
+    --miti-accent: #c7d92f;
+    --miti-accent-strong: #b4c925;
+    --miti-primary: #d97757;
+    --miti-primary-hover: #b86549;
+    --miti-selected: #1a3e61;
+    --miti-dark: #111111;
 
     --green: #236338;
     --green-soft: #e3efe6;
@@ -36,7 +38,7 @@
     --shadow-sm: 0 1px 3px rgba(21, 21, 21, 0.05);
     --shadow-md: 0 12px 32px rgba(21, 21, 21, 0.08);
 
-    --font-roboto: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+    --font-roboto: 'Familjen Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
     --font-mono: 'IBM Plex Mono', ui-monospace, Menlo, Consolas, monospace;
     --ease: cubic-bezier(0.22, 1, 0.36, 1);
   }
@@ -50,8 +52,8 @@
   body {
     margin: 0;
     padding: 0;
-    background: var(--cb-canvas);
-    color: var(--cb-ink);
+    background: var(--miti-canvas);
+    color: var(--miti-ink);
     font-family: var(--font-roboto);
     font-size: 14px;
     line-height: 1.55;
@@ -73,13 +75,13 @@
   }
 
   /* Header & Navigation */
-  .cb-header {
+  .miti-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 16px;
     padding-bottom: 20px;
-    border-bottom: 1px solid var(--cb-border);
+    border-bottom: 1px solid var(--miti-border);
     margin-bottom: 28px;
     flex-wrap: wrap;
   }
@@ -88,43 +90,16 @@
     align-items: center;
     gap: 12px;
   }
-  .brand-logo-mark {
-    width: 28px;
-    height: 28px;
-    background: var(--cb-ink);
-    color: var(--cb-accent);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 800;
-    font-family: var(--font-roboto);
-    border-radius: var(--radius-sm);
-    font-size: 15px;
-    letter-spacing: -0.05em;
-  }
-  .brand-name {
-    font-family: var(--font-roboto);
-    font-size: 13px;
-    font-weight: 800;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: var(--cb-ink);
-  }
-  .brand-tag {
-    font-family: var(--font-roboto);
-    font-size: 11px;
-    color: var(--cb-muted);
-    font-weight: 500;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    padding-left: 8px;
-    border-left: 1px solid var(--cb-border);
+  .brand-logo {
+    height: 64px;
+    width: auto;
+    display: block;
   }
 
   .nav {
     display: inline-flex;
-    background: var(--cb-white);
-    border: 1px solid var(--cb-border);
+    background: var(--miti-white);
+    border: 1px solid var(--miti-border);
     border-radius: var(--radius-pill);
     padding: 4px;
     box-shadow: var(--shadow-sm);
@@ -136,7 +111,7 @@
     font-family: var(--font-roboto);
     font-size: 11.5px;
     font-weight: 700;
-    color: var(--cb-ink-soft);
+    color: var(--miti-ink-soft);
     text-decoration: none;
     padding: 7px 18px;
     border-radius: var(--radius-pill);
@@ -145,17 +120,17 @@
     transition: all 0.18s var(--ease);
   }
   .nav a.active {
-    background: var(--cb-primary);
-    color: var(--cb-white);
+    background: var(--miti-selected);
+    color: var(--miti-white);
   }
   .nav a:hover:not(.active) {
-    background: var(--cb-surface);
-    color: var(--cb-ink);
+    background: var(--miti-surface);
+    color: var(--miti-ink);
   }
 
   /* Masthead */
   .masthead { margin-bottom: 28px; }
-  .cb-eyebrow {
+  .miti-eyebrow {
     display: inline-flex;
     align-items: center;
     gap: 8px;
@@ -164,25 +139,86 @@
     font-weight: 700;
     letter-spacing: 0.12em;
     text-transform: uppercase;
-    color: var(--cb-ink-soft);
+    color: var(--miti-ink-soft);
     margin: 0 0 10px;
   }
-  .cb-eyebrow::after { content: "→"; font-size: 13px; }
+  .miti-eyebrow::after { content: "→"; font-size: 13px; }
   .masthead h1 {
     font-family: var(--font-roboto);
     font-size: clamp(26px, 3.2vw, 42px);
     font-weight: 800;
     line-height: 1.1;
     letter-spacing: -0.03em;
-    color: var(--cb-ink);
+    color: var(--miti-ink);
     margin: 0 0 12px;
   }
   .masthead .sub {
     font-family: var(--font-roboto);
     font-size: 14.5px;
-    color: var(--cb-ink-soft);
+    color: var(--miti-ink-soft);
     max-width: 880px;
     line-height: 1.6;
+  }
+  .masthead-title-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    position: relative;
+    margin: 0 0 12px;
+  }
+  .masthead-title-row h1 {
+    margin: 0;
+  }
+  .info-icon-btn {
+    background: none;
+    border: none;
+    padding: 0;
+    margin: 0;
+    cursor: pointer;
+    color: #d97757;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 0;
+    flex-shrink: 0;
+  }
+  .info-icon-btn svg {
+    width: 20px;
+    height: 20px;
+  }
+  .info-icon-btn:hover {
+    opacity: 0.75;
+  }
+  .info-popover {
+    display: none;
+    position: absolute;
+    top: calc(100% + 10px);
+    left: 0;
+    z-index: 50;
+    width: min(440px, 90vw);
+    background: var(--miti-surface);
+    border: 1px solid var(--miti-border);
+    border-radius: var(--radius-md);
+    padding: 16px 18px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.14);
+    font-family: var(--font-roboto);
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--miti-ink-soft);
+  }
+  .info-popover.open {
+    display: block;
+    animation: modalFadeIn 0.15s var(--ease);
+  }
+  @keyframes modalFadeIn {
+    from { opacity: 0; transform: translateY(-4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .info-popover p {
+    margin: 0 0 10px;
+  }
+  .info-popover p:last-child {
+    margin-bottom: 0;
   }
 
   /* Section Header */
@@ -192,7 +228,7 @@
     justify-content: space-between;
     margin: 36px 0 14px;
     padding-bottom: 10px;
-    border-bottom: 2px solid var(--cb-ink);
+    border-bottom: 2px solid var(--miti-ink);
   }
   .section-head:first-of-type { margin-top: 0; }
   .section-head h2 {
@@ -204,13 +240,13 @@
     font-weight: 700;
     letter-spacing: -0.015em;
     margin: 0;
-    color: var(--cb-ink);
+    color: var(--miti-ink);
   }
   .section-head .section-note {
     font-family: var(--font-roboto);
     font-size: 11.5px;
     font-weight: 600;
-    color: var(--cb-muted);
+    color: var(--miti-muted);
     text-transform: uppercase;
     letter-spacing: 0.05em;
   }
@@ -219,8 +255,8 @@
   .table-wrap {
     box-shadow: var(--shadow-sm);
     border-radius: var(--radius-md);
-    border: 1px solid var(--cb-border);
-    background: var(--cb-white);
+    border: 1px solid var(--miti-border);
+    background: var(--miti-white);
     overflow: hidden;
     margin-bottom: 24px;
   }
@@ -231,23 +267,23 @@
     font-size: 10.5px;
     text-transform: uppercase;
     letter-spacing: 0.06em;
-    color: var(--cb-ink-soft);
+    color: var(--miti-ink-soft);
     font-weight: 700;
     padding: 12px 14px;
-    border-bottom: 1px solid var(--cb-border);
-    background: var(--cb-surface);
+    border-bottom: 1px solid var(--miti-border);
+    background: var(--miti-surface);
   }
   tbody td {
     padding: 12px 14px;
-    border-bottom: 1px solid var(--cb-border);
+    border-bottom: 1px solid var(--miti-border);
     vertical-align: middle;
     font-family: var(--font-roboto);
     font-size: 13px;
   }
   tbody tr:hover { background: rgba(199, 217, 47, 0.12); }
-  .empty { padding: 36px 16px; text-align: center; color: var(--cb-muted); font-size: 13px; font-family: var(--font-roboto); }
-  .ts { font-family: var(--font-mono); font-size: 11.5px; color: var(--cb-muted); white-space: nowrap; }
-  .origin { font-family: var(--font-mono); font-size: 12px; word-break: break-all; color: var(--cb-ink); }
+  .empty { padding: 36px 16px; text-align: center; color: var(--miti-muted); font-size: 13px; font-family: var(--font-roboto); }
+  .ts { font-family: var(--font-mono); font-size: 11.5px; color: var(--miti-muted); white-space: nowrap; }
+  .origin { font-family: var(--font-mono); font-size: 12px; word-break: break-all; color: var(--miti-ink); }
 
   .pill {
     border-radius: var(--radius-pill);
@@ -262,7 +298,7 @@
   .pill-green { background: var(--green-soft); color: var(--green); }
   .pill-red { background: var(--red-soft); color: var(--red); }
   .pill-amber { background: var(--amber-soft); color: var(--amber); }
-  .pill-dim { background: var(--cb-surface); color: var(--cb-muted); }
+  .pill-dim { background: var(--miti-surface); color: var(--miti-muted); }
   .counts span { margin-right: 6px; white-space: nowrap; }
 
   .actions { display: flex; gap: 8px; white-space: nowrap; align-items: center; }
@@ -274,24 +310,24 @@
     font-family: var(--font-roboto);
     font-weight: 700;
     font-size: 11px;
-    color: var(--cb-ink);
+    color: var(--miti-ink);
     text-decoration: none;
-    border: 1px solid var(--cb-border);
-    background: var(--cb-white);
+    border: 1px solid var(--miti-border);
+    background: var(--miti-white);
     padding: 4px 10px;
     letter-spacing: 0.04em;
     transition: all 0.15s ease;
   }
   .report-link:hover {
-    background: var(--cb-primary);
-    color: var(--cb-white);
-    border-color: var(--cb-primary);
+    background: var(--miti-primary);
+    color: var(--miti-white);
+    border-color: var(--miti-primary);
   }
   .report-link.active,
   button.active {
-    background: var(--cb-primary);
-    color: var(--cb-white);
-    border-color: var(--cb-primary);
+    background: var(--miti-primary);
+    color: var(--miti-white);
+    border-color: var(--miti-primary);
   }
   .btn-delete {
     display: inline-flex;
@@ -318,37 +354,40 @@
     opacity: 0.45;
     cursor: not-allowed;
     pointer-events: none;
-    background: var(--cb-surface);
-    color: var(--cb-muted);
-    border-color: var(--cb-border);
+    background: var(--miti-surface);
+    color: var(--miti-muted);
+    border-color: var(--miti-border);
   }
 </style>
 </head>
 <body>
 <div class="site-wrap">
 <!-- Header -->
-<header class="cb-header" style="display: flex; align-items: center; justify-content: space-between; gap: 24px; padding-bottom: 20px; border-bottom: 1px solid var(--cb-border); margin-bottom: 28px; position: relative;">
+<header class="miti-header" style="display: flex; align-items: center; justify-content: space-between; gap: 24px; padding-bottom: 20px; border-bottom: 1px solid var(--miti-border); margin-bottom: 28px; position: relative;">
 <div class="brand-badge">
-<div class="brand-logo-mark">CB</div>
-<div>
-<span class="brand-name">Content Bloom</span>
-<span class="brand-tag">Quality Engineering</span>
-</div>
+<img alt="Miti" class="brand-logo" src="miti-logo.png">
 </div>
 <nav aria-label="Primary navigation" class="nav" style="margin-left: auto; display: inline-flex; background: rgb(255, 255, 255); border: 1px solid rgb(216, 214, 207); border-radius: 999px; padding: 4px; box-shadow: rgba(21, 21, 21, 0.05) 0px 1px 3px;">
-<a href="index.html" class=""><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="layers" aria-hidden="true" class="lucide lucide-layers"><path d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83z"></path><path d="M2 12a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 12"></path><path d="M2 17a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 17"></path></svg> Diff Inspector</a>
+<a href="index.html" class=""><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="layers" aria-hidden="true" class="lucide lucide-layers"><path d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83z"></path><path d="M2 12a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 12"></path><path d="M2 17a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 17"></path></svg> Site Parity</a>
 <a href="analysis.html" class=""><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="activity" aria-hidden="true" class="lucide lucide-activity"><path d="M22 12h-2.48a2 2 0 0 0-1.93 1.46l-2.35 8.36a.25.25 0 0 1-.48 0L9.24 2.18a.25.25 0 0 0-.48 0l-2.35 8.36A2 2 0 0 1 4.49 12H2"></path></svg> Site Analysis</a>
-<a class="active" href="history.html" style="background: rgb(23, 24, 26); color: rgb(255, 255, 255);"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="history" aria-hidden="true" class="lucide lucide-history"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path><path d="M12 7v5l4 2"></path></svg> History</a>
+<a class="active" href="history.html"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="history" aria-hidden="true" class="lucide lucide-history"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path><path d="M12 7v5l4 2"></path></svg> History</a>
 </nav>
 </header>
 <!-- Masthead -->
 <div class="masthead">
-<p class="cb-eyebrow">Audit Archive &amp; Reports</p>
+<p class="miti-eyebrow">Audit Archive &amp; Reports</p>
+<div class="masthead-title-row">
 <h1 class="">Run History</h1>
-<div class="sub">Every completed inspection, link audit, and performance test is saved automatically. Reports regenerate on demand from archived run parameters, preserving access to downloadable CSV and PDF documents indefinitely. The most recent 30 runs of each inspection type are indexed.</div>
+<button class="info-icon-btn" id="mastheadInfoBtn" type="button" aria-label="About Run History" aria-expanded="false">
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="M12 16v-4"></path><path d="M12 8h.01"></path></svg>
+</button>
+<div class="info-popover" id="mastheadInfoPopover" role="dialog" aria-label="About Run History">
+<p>Every completed site parity run and site analysis is saved automatically. Reports can be regenerated whenever needed in CSV or PDF format. The 30 most recent runs for each inspection type are kept in your history.</p>
+</div>
+</div>
 </div>
 <div class="section-head">
-<h2 class=""><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="git-compare" aria-hidden="true" class="lucide lucide-git-compare"><circle cx="18" cy="18" r="3"></circle><circle cx="6" cy="6" r="3"></circle><path d="M13 6h3a2 2 0 0 1 2 2v7"></path><path d="M11 18H8a2 2 0 0 1-2-2V9"></path></svg> Diff Inspector Runs</h2>
+<h2 class=""><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="git-compare" aria-hidden="true" class="lucide lucide-git-compare"><circle cx="18" cy="18" r="3"></circle><circle cx="6" cy="6" r="3"></circle><path d="M13 6h3a2 2 0 0 1 2 2v7"></path><path d="M11 18H8a2 2 0 0 1-2-2V9"></path></svg> Site Parity Runs</h2>
 <span class="section-note">Structural &amp; Source Comparisons</span>
 </div>
 <div class="table-wrap">
@@ -425,7 +464,7 @@
       const result = await api("/api/history/diff");
       const runs = result.runs || [];
       if(runs.length === 0){
-        body.innerHTML = `<tr><td colspan="7"><div class="empty">No saved runs yet — crawl in Diff Inspector first.</div></td></tr>`;
+        body.innerHTML = `<tr><td colspan="7"><div class="empty">No saved runs yet — crawl in Site Parity first.</div></td></tr>`;
         return;
       }
       body.innerHTML = runs.map(r => {
@@ -435,8 +474,8 @@
         return `
         <tr data-type="diff" data-id="${escapeHtml(r.id)}">
           <td class="ts">${fmtDate(r.timestamp)}</td>
-          <td class="origin">${escapeHtml(r.benchOrigin || "—")} <span style="color:var(--cb-muted);">(${r.benchCount||0})</span></td>
-          <td class="origin">${escapeHtml(r.candOrigin || "—")} <span style="color:var(--cb-muted);">(${r.candCount||0})</span></td>
+          <td class="origin">${escapeHtml(r.benchOrigin || "—")} <span style="color:var(--miti-muted);">(${r.benchCount||0})</span></td>
+          <td class="origin">${escapeHtml(r.candOrigin || "—")} <span style="color:var(--miti-muted);">(${r.candCount||0})</span></td>
           <td>${status}</td>
           <td>${r.matchedCount || 0}</td>
           <td class="counts">
@@ -516,6 +555,30 @@
       btn.disabled = false;
     }
   });
+
+  (function initMastheadInfoPopover(){
+    const btn = $("mastheadInfoBtn");
+    const popover = $("mastheadInfoPopover");
+    if(!btn || !popover) return;
+    function closePopover(){
+      popover.classList.remove("open");
+      btn.setAttribute("aria-expanded", "false");
+    }
+    function togglePopover(e){
+      e.stopPropagation();
+      const isOpen = popover.classList.toggle("open");
+      btn.setAttribute("aria-expanded", isOpen ? "true" : "false");
+    }
+    btn.addEventListener("click", togglePopover);
+    document.addEventListener("click", (e) => {
+      if(popover.classList.contains("open") && !popover.contains(e.target) && e.target !== btn){
+        closePopover();
+      }
+    });
+    document.addEventListener("keydown", (e) => {
+      if(e.key === "Escape" && popover.classList.contains("open")) closePopover();
+    });
+  })();
 
   refreshIcons();
   loadDiffRuns();
