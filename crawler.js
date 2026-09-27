@@ -278,14 +278,21 @@ async function runPlaywrightCrawl(startRequests, {
 
         const loadedUrl = request.loadedUrl || request.url;
         const pathKey = normalizePath(loadedUrl);
-        if (pages.has(pathKey)) return;
+        // URL-list mode (renderUrlList): each request carries its position in
+        // the submitted list. Key by position so two list entries that share a
+        // path (e.g. "/" on two domains) are both kept.
+        const origIndex = request.userData && typeof request.userData.origIndex === 'number'
+          ? request.userData.origIndex
+          : undefined;
+        const storeKey = origIndex !== undefined ? `${origIndex}::${pathKey}` : pathKey;
+        if (pages.has(storeKey)) return;
 
         const title = (await page.title()) || pathKey;
 
         // Re-check and store with NO await in between. With maxConcurrency: 2,
         // two handlers can both pass the checks above during the awaits and
         // would otherwise overshoot the limit (or store the same path twice).
-        if (pages.has(pathKey)) return;
+        if (pages.has(storeKey)) return;
         if (pages.size >= pageLimit) {
           limitReached = true;
           return;
@@ -297,7 +304,12 @@ async function runPlaywrightCrawl(startRequests, {
         // every crawled page here was pure memory bloat with no reader,
         // and on a several-hundred-page site that's enough to exhaust
         // Node's memory and crash or stall the process.
-        pages.set(pathKey, { title, url: loadedUrl, path: pathKey });
+        pages.set(storeKey, {
+          title,
+          url: loadedUrl,
+          path: pathKey,
+          ...(origIndex !== undefined ? { origIndex } : {}),
+        });
 
         if (pages.size % 25 === 0) {
           const mb = Math.round(process.memoryUsage().rss / 1024 / 1024);
@@ -508,4 +520,81 @@ function registerUrlList(urls) {
   return { origin, pages, invalidCount };
 }
 
-module.exports = { crawlSite, registerUrlList, normalizePath, getSitemapUrls };
+/**
+ * "Use a URL list" mode. Renders EXACTLY the given URLs in a real headless
+ * browser — so titles and client-rendered content are real — but never reads
+ * a sitemap and never follows links found on those pages (discover: false).
+ * Only the pasted/uploaded URLs are visited, nothing else.
+ *
+ * Order is preserved and entries are NOT deduplicated: Site Diff pairs the
+ * Nth benchmark URL with the Nth candidate URL, so dropping or reordering an
+ * entry would shift every later pair. A URL that fails to load is kept in its
+ * position with a "(could not load)" title for the same reason; the test phase
+ * then reports it as unreachable instead of silently mispairing the rest.
+ *
+ * Returns { origin, pages: Map<key, {title, url, path}>, invalidCount } —
+ * same shape as crawlSite().
+ */
+async function renderUrlList(urls, { maxPages = 500, requestsPerMinute = 20, userAgent, onProgress, registerStop } = {}) {
+  const HARD_CEILING = Math.min(maxPages || 500, 500);
+  const validUrls = [];
+  let invalidCount = 0;
+
+  for (const raw of urls || []) {
+    const candidate = String(raw || '').trim();
+    if (!candidate) continue;
+    if (validUrls.length >= HARD_CEILING) break;
+    try {
+      const parsed = new URL(/^https?:\/\//i.test(candidate) ? candidate : `https://${candidate}`);
+      if (!/^https?:$/.test(parsed.protocol)) throw new Error('not http(s)');
+      validUrls.push(parsed.href);
+    } catch (e) {
+      invalidCount += 1;
+    }
+  }
+
+  if (validUrls.length === 0) {
+    throw new Error(
+      `No valid URLs found in the list provided.${invalidCount ? ` ${invalidCount} line(s) could not be parsed as a URL.` : ''}`
+    );
+  }
+
+  const ua = userAgent || (await getUserAgent());
+  const startRequests = validUrls.map((url, i) => ({
+    url,
+    // Unique key per position — without it Crawlee would treat the same URL
+    // listed twice as one request and silently skip the second.
+    uniqueKey: `list-${i}-${url}`,
+    userData: { origIndex: i },
+  }));
+
+  const { pages: rendered } = await runPlaywrightCrawl(startRequests, {
+    maxPages: startRequests.length,
+    requestsPerMinute,
+    userAgent: ua,
+    onProgress,
+    registerStop,
+    discover: false, // the whole point: no sitemap, no link-following
+    sourceLabel: 'URL list',
+  });
+
+  // Rebuild in the original list order (pages finish in whatever order the
+  // concurrent queue completes them) and fill gaps for URLs that failed.
+  const byIndex = new Map();
+  for (const p of rendered.values()) {
+    if (typeof p.origIndex === 'number') byIndex.set(p.origIndex, p);
+  }
+
+  const pages = new Map();
+  validUrls.forEach((url, i) => {
+    const hit = byIndex.get(i);
+    const page = hit
+      ? { title: hit.title, url: hit.url, path: hit.path }
+      : { title: '(could not load)', url, path: normalizePath(url) };
+    pages.set(`${i}::${page.path}`, page);
+  });
+
+  return { origin: new URL(validUrls[0]).origin, pages, invalidCount };
+}
+
+module.exports = { crawlSite, renderUrlList, registerUrlList, normalizePath, getSitemapUrls };

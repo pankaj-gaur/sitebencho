@@ -1509,8 +1509,9 @@ https://example.com/page-3" rows="4"></textarea>
     });
     updateDashboard();
     updateListMismatchWarning();
-    $("btnCrawl").disabled = mode !== "crawl";
-    $("btnCrawl").title = mode !== "crawl" ? "Not needed in this mode — press Start testing directly." : "";
+    $("btnCrawl").title = mode === "list"
+      ? "Renders only the URLs in each list — no sitemap, no link-following."
+      : (mode === "history" ? "Not needed in this mode — press Start testing directly." : "");
     updateCrawlButtonState();
     refreshIcons();
   }
@@ -1865,7 +1866,9 @@ https://example.com/page-3" rows="4"></textarea>
     const mode = state.bench.mode;
     const bothReady = hasInput("bench") && hasInput("cand");
     if(mode === "list"){
-      $("btnCrawl").disabled = true;
+      // Crawl renders ONLY the listed URLs (real titles). Start testing also
+      // works directly — it renders the lists first if they haven't been yet.
+      $("btnCrawl").disabled = !bothReady || crawling;
       $("btnTest").disabled = !bothReady || crawling;
     }else if(mode === "history"){
       $("btnCrawl").disabled = true;
@@ -1953,7 +1956,7 @@ https://example.com/page-3" rows="4"></textarea>
       updateDashboard();
       setBar(slot, 100, "done");
       const invalidNote = result.invalidCount ? ` (${result.invalidCount} invalid URL(s) skipped)` : "";
-      const verb = mode === "list" ? "loaded from the list" : "rendered and indexed";
+      const verb = mode === "list" ? "rendered from the list" : "rendered and indexed";
       statusEl.textContent = `Done — ${result.count} page(s) ${verb}.${invalidNote}`;
       statusEl.className = "status-line ok";
       return true;

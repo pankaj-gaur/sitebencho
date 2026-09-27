@@ -1747,9 +1747,11 @@ https://example.com/page-3" rows="4"></textarea>
   function updateButtonStates(){
     const hasPages = state.pages.length > 0;
     if(state.mode === "list"){
-      $("btnCrawl").disabled = true;
-      $("btnCrawl").title = "Not needed in this mode — press a Scan button directly.";
+      // Crawl renders ONLY the listed URLs (real titles). The Scan buttons
+      // also work directly — they render the list first if it hasn't been yet.
       const ready = hasSiteInput();
+      $("btnCrawl").disabled = !ready;
+      $("btnCrawl").title = "Renders only the URLs in the list — no sitemap, no link-following.";
       $("btnScanLinks").disabled = !ready;
       $("btnLighthouse").disabled = !ready;
     }else if(state.mode === "history"){
@@ -1865,7 +1867,7 @@ https://example.com/page-3" rows="4"></textarea>
       updateButtonStates();
       setBar("crawlBar", 100, "done");
       const invalidNote = result.invalidCount ? ` (${result.invalidCount} invalid URL(s) skipped)` : "";
-      const verb = mode === "list" ? "loaded from the list" : "rendered and indexed";
+      const verb = mode === "list" ? "rendered from the list" : "rendered and indexed";
       $("crawlStatus").textContent = `Done — ${result.count} page(s) ${verb}.${invalidNote}`;
       $("crawlStatus").className = "status-line ok";
     }catch(e){
