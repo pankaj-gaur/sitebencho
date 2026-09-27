@@ -1,0 +1,11 @@
+/*
+ * parity-snapshot.css — styles shared by exactly these pages:
+ *   - index.html (Site Parity)
+ *   - snapshots.html (Daily Snapshots)
+ * Loaded after main.css and before each page's own stylesheet.
+ */
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+}

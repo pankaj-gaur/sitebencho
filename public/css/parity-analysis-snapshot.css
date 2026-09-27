@@ -1,0 +1,132 @@
+/*
+ * parity-analysis-snapshot.css — styles shared by exactly these pages:
+ *   - index.html (Site Parity)
+ *   - analysis.html (Site Analysis)
+ *   - snapshots.html (Daily Snapshots)
+ * Loaded after main.css and before each page's own stylesheet.
+ */
+
+:root {
+  --shadow-lg: 0 20px 48px rgba(21, 21, 21, 0.16);
+  --font-body: 'Familjen Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+}
+
+body {
+  font-family: var(--font-body);
+}
+
+.masthead {
+  margin-bottom: 24px;
+}
+
+.masthead h1 {
+  line-height: 1.05;
+  letter-spacing: -0.035em;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ---------- Progress bar widths ----------
+   Set from JS with Miti.setProgress(el, pct), which writes data-pct="0…100"
+   (replaces the former inline style.width). */
+:is(.progress-fill, .runbar .fill)[data-pct="0"] { width: 0%; }
+:is(.progress-fill, .runbar .fill)[data-pct="1"] { width: 1%; }
+:is(.progress-fill, .runbar .fill)[data-pct="2"] { width: 2%; }
+:is(.progress-fill, .runbar .fill)[data-pct="3"] { width: 3%; }
+:is(.progress-fill, .runbar .fill)[data-pct="4"] { width: 4%; }
+:is(.progress-fill, .runbar .fill)[data-pct="5"] { width: 5%; }
+:is(.progress-fill, .runbar .fill)[data-pct="6"] { width: 6%; }
+:is(.progress-fill, .runbar .fill)[data-pct="7"] { width: 7%; }
+:is(.progress-fill, .runbar .fill)[data-pct="8"] { width: 8%; }
+:is(.progress-fill, .runbar .fill)[data-pct="9"] { width: 9%; }
+:is(.progress-fill, .runbar .fill)[data-pct="10"] { width: 10%; }
+:is(.progress-fill, .runbar .fill)[data-pct="11"] { width: 11%; }
+:is(.progress-fill, .runbar .fill)[data-pct="12"] { width: 12%; }
+:is(.progress-fill, .runbar .fill)[data-pct="13"] { width: 13%; }
+:is(.progress-fill, .runbar .fill)[data-pct="14"] { width: 14%; }
+:is(.progress-fill, .runbar .fill)[data-pct="15"] { width: 15%; }
+:is(.progress-fill, .runbar .fill)[data-pct="16"] { width: 16%; }
+:is(.progress-fill, .runbar .fill)[data-pct="17"] { width: 17%; }
+:is(.progress-fill, .runbar .fill)[data-pct="18"] { width: 18%; }
+:is(.progress-fill, .runbar .fill)[data-pct="19"] { width: 19%; }
+:is(.progress-fill, .runbar .fill)[data-pct="20"] { width: 20%; }
+:is(.progress-fill, .runbar .fill)[data-pct="21"] { width: 21%; }
+:is(.progress-fill, .runbar .fill)[data-pct="22"] { width: 22%; }
+:is(.progress-fill, .runbar .fill)[data-pct="23"] { width: 23%; }
+:is(.progress-fill, .runbar .fill)[data-pct="24"] { width: 24%; }
+:is(.progress-fill, .runbar .fill)[data-pct="25"] { width: 25%; }
+:is(.progress-fill, .runbar .fill)[data-pct="26"] { width: 26%; }
+:is(.progress-fill, .runbar .fill)[data-pct="27"] { width: 27%; }
+:is(.progress-fill, .runbar .fill)[data-pct="28"] { width: 28%; }
+:is(.progress-fill, .runbar .fill)[data-pct="29"] { width: 29%; }
+:is(.progress-fill, .runbar .fill)[data-pct="30"] { width: 30%; }
+:is(.progress-fill, .runbar .fill)[data-pct="31"] { width: 31%; }
+:is(.progress-fill, .runbar .fill)[data-pct="32"] { width: 32%; }
+:is(.progress-fill, .runbar .fill)[data-pct="33"] { width: 33%; }
+:is(.progress-fill, .runbar .fill)[data-pct="34"] { width: 34%; }
+:is(.progress-fill, .runbar .fill)[data-pct="35"] { width: 35%; }
+:is(.progress-fill, .runbar .fill)[data-pct="36"] { width: 36%; }
+:is(.progress-fill, .runbar .fill)[data-pct="37"] { width: 37%; }
+:is(.progress-fill, .runbar .fill)[data-pct="38"] { width: 38%; }
+:is(.progress-fill, .runbar .fill)[data-pct="39"] { width: 39%; }
+:is(.progress-fill, .runbar .fill)[data-pct="40"] { width: 40%; }
+:is(.progress-fill, .runbar .fill)[data-pct="41"] { width: 41%; }
+:is(.progress-fill, .runbar .fill)[data-pct="42"] { width: 42%; }
+:is(.progress-fill, .runbar .fill)[data-pct="43"] { width: 43%; }
+:is(.progress-fill, .runbar .fill)[data-pct="44"] { width: 44%; }
+:is(.progress-fill, .runbar .fill)[data-pct="45"] { width: 45%; }
+:is(.progress-fill, .runbar .fill)[data-pct="46"] { width: 46%; }
+:is(.progress-fill, .runbar .fill)[data-pct="47"] { width: 47%; }
+:is(.progress-fill, .runbar .fill)[data-pct="48"] { width: 48%; }
+:is(.progress-fill, .runbar .fill)[data-pct="49"] { width: 49%; }
+:is(.progress-fill, .runbar .fill)[data-pct="50"] { width: 50%; }
+:is(.progress-fill, .runbar .fill)[data-pct="51"] { width: 51%; }
+:is(.progress-fill, .runbar .fill)[data-pct="52"] { width: 52%; }
+:is(.progress-fill, .runbar .fill)[data-pct="53"] { width: 53%; }
+:is(.progress-fill, .runbar .fill)[data-pct="54"] { width: 54%; }
+:is(.progress-fill, .runbar .fill)[data-pct="55"] { width: 55%; }
+:is(.progress-fill, .runbar .fill)[data-pct="56"] { width: 56%; }
+:is(.progress-fill, .runbar .fill)[data-pct="57"] { width: 57%; }
+:is(.progress-fill, .runbar .fill)[data-pct="58"] { width: 58%; }
+:is(.progress-fill, .runbar .fill)[data-pct="59"] { width: 59%; }
+:is(.progress-fill, .runbar .fill)[data-pct="60"] { width: 60%; }
+:is(.progress-fill, .runbar .fill)[data-pct="61"] { width: 61%; }
+:is(.progress-fill, .runbar .fill)[data-pct="62"] { width: 62%; }
+:is(.progress-fill, .runbar .fill)[data-pct="63"] { width: 63%; }
+:is(.progress-fill, .runbar .fill)[data-pct="64"] { width: 64%; }
+:is(.progress-fill, .runbar .fill)[data-pct="65"] { width: 65%; }
+:is(.progress-fill, .runbar .fill)[data-pct="66"] { width: 66%; }
+:is(.progress-fill, .runbar .fill)[data-pct="67"] { width: 67%; }
+:is(.progress-fill, .runbar .fill)[data-pct="68"] { width: 68%; }
+:is(.progress-fill, .runbar .fill)[data-pct="69"] { width: 69%; }
+:is(.progress-fill, .runbar .fill)[data-pct="70"] { width: 70%; }
+:is(.progress-fill, .runbar .fill)[data-pct="71"] { width: 71%; }
+:is(.progress-fill, .runbar .fill)[data-pct="72"] { width: 72%; }
+:is(.progress-fill, .runbar .fill)[data-pct="73"] { width: 73%; }
+:is(.progress-fill, .runbar .fill)[data-pct="74"] { width: 74%; }
+:is(.progress-fill, .runbar .fill)[data-pct="75"] { width: 75%; }
+:is(.progress-fill, .runbar .fill)[data-pct="76"] { width: 76%; }
+:is(.progress-fill, .runbar .fill)[data-pct="77"] { width: 77%; }
+:is(.progress-fill, .runbar .fill)[data-pct="78"] { width: 78%; }
+:is(.progress-fill, .runbar .fill)[data-pct="79"] { width: 79%; }
+:is(.progress-fill, .runbar .fill)[data-pct="80"] { width: 80%; }
+:is(.progress-fill, .runbar .fill)[data-pct="81"] { width: 81%; }
+:is(.progress-fill, .runbar .fill)[data-pct="82"] { width: 82%; }
+:is(.progress-fill, .runbar .fill)[data-pct="83"] { width: 83%; }
+:is(.progress-fill, .runbar .fill)[data-pct="84"] { width: 84%; }
+:is(.progress-fill, .runbar .fill)[data-pct="85"] { width: 85%; }
+:is(.progress-fill, .runbar .fill)[data-pct="86"] { width: 86%; }
+:is(.progress-fill, .runbar .fill)[data-pct="87"] { width: 87%; }
+:is(.progress-fill, .runbar .fill)[data-pct="88"] { width: 88%; }
+:is(.progress-fill, .runbar .fill)[data-pct="89"] { width: 89%; }
+:is(.progress-fill, .runbar .fill)[data-pct="90"] { width: 90%; }
+:is(.progress-fill, .runbar .fill)[data-pct="91"] { width: 91%; }
+:is(.progress-fill, .runbar .fill)[data-pct="92"] { width: 92%; }
+:is(.progress-fill, .runbar .fill)[data-pct="93"] { width: 93%; }
+:is(.progress-fill, .runbar .fill)[data-pct="94"] { width: 94%; }
+:is(.progress-fill, .runbar .fill)[data-pct="95"] { width: 95%; }
+:is(.progress-fill, .runbar .fill)[data-pct="96"] { width: 96%; }
+:is(.progress-fill, .runbar .fill)[data-pct="97"] { width: 97%; }
+:is(.progress-fill, .runbar .fill)[data-pct="98"] { width: 98%; }
+:is(.progress-fill, .runbar .fill)[data-pct="99"] { width: 99%; }
+:is(.progress-fill, .runbar .fill)[data-pct="100"] { width: 100%; }

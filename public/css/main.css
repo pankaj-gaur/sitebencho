@@ -1,0 +1,262 @@
+/*
+ * main.css — styles shared by ALL four pages.
+ *
+ * Only declarations that are identical on every page live here.
+ * Styles shared by 2–3 pages live in the combination files
+ * (e.g. parity-analysis.css), and anything unique to one page lives in
+ * that page's own file (parity.css, analysis.css, snapshot.css, history.css).
+ * Load order on every page: main.css → shared combination files → page file.
+ */
+
+/* ---------- Design tokens ---------- */
+:root {
+  --miti-ink: #151515;
+  --miti-ink-soft: #363636;
+  --miti-white: #ffffff;
+  --miti-canvas: #f5f4f0;
+  --miti-surface: #eeece6;
+  --miti-muted: #737373;
+  --miti-border: #d8d6cf;
+  --miti-border-strong: #c2bfb6;
+  --miti-accent: #d97757;
+  --miti-accent-hover: #b86549;
+  --miti-selected: #1a3e61;
+  --miti-dark: #111111;
+  --green: #236338;
+  --green-soft: #e3efe6;
+  --red: #a32d26;
+  --red-soft: #f7e6e4;
+  --amber: #945815;
+  --amber-soft: #fbf0df;
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 14px;
+  --radius-pill: 999px;
+  --shadow-sm: 0 1px 3px rgba(21, 21, 21, 0.05);
+  --shadow-md: 0 12px 32px rgba(21, 21, 21, 0.08);
+  --font-mono: 'IBM Plex Mono', ui-monospace, Menlo, Consolas, monospace;
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* ---------- Base ---------- */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--miti-canvas);
+  color: var(--miti-ink);
+  font-size: 14px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ---------- Icons ---------- */
+svg.lucide {
+  width: 15px;
+  height: 15px;
+  vertical-align: -2px;
+  display: inline-block;
+  flex-shrink: 0; /* never squeeze icons inside flex rows */
+}
+
+/* ---------- Layout ---------- */
+.site-wrap {
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: 32px 24px 64px;
+}
+
+/* ---------- Header & navigation ---------- */
+.miti-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--miti-border);
+  margin-bottom: 28px;
+  flex-wrap: wrap;
+}
+
+.brand-badge {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.brand-logo {
+  height: 64px;
+  width: auto;
+  display: block;
+}
+
+.nav {
+  display: inline-flex;
+  background: var(--miti-white);
+  border: 1px solid var(--miti-border);
+  border-radius: var(--radius-pill);
+  padding: 4px;
+  box-shadow: var(--shadow-sm);
+}
+
+.nav a {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--miti-ink-soft);
+  text-decoration: none;
+  padding: 7px 18px;
+  border-radius: var(--radius-pill);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  transition: all 0.18s var(--ease);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.nav a.active {
+  background: var(--miti-selected);
+  color: var(--miti-white);
+}
+
+.nav a:hover:not(.active) {
+  background: var(--miti-surface);
+  color: var(--miti-ink);
+}
+
+/* ---------- Masthead ---------- */
+.miti-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--miti-ink-soft);
+  margin: 0 0 10px;
+}
+
+.miti-eyebrow::after {
+  content: "→";
+  font-size: 13px;
+}
+
+.masthead h1 {
+  font-size: clamp(26px, 3.2vw, 42px);
+  font-weight: 800;
+}
+
+.masthead-title-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  position: relative;
+  margin: 0 0 12px;
+}
+
+/* ---------- Masthead info button & popover ---------- */
+.info-icon-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 0;
+  flex-shrink: 0;
+}
+
+.info-icon-btn svg {
+  width: 20px;
+  height: 20px;
+}
+
+.info-icon-btn:hover {
+  opacity: 0.75;
+}
+
+.info-popover {
+  display: none;
+  position: absolute;
+  top: calc(100% + 10px);
+  left: 0;
+  z-index: 50;
+  width: min(440px, 90vw);
+  background: var(--miti-surface);
+  border: 1px solid var(--miti-border);
+  border-radius: var(--radius-md);
+  padding: 16px 18px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--miti-ink-soft);
+}
+
+.info-popover.open {
+  display: block;
+}
+
+.info-popover p {
+  margin: 0 0 10px;
+}
+
+.info-popover p:last-child {
+  margin-bottom: 0;
+}
+
+/* ---------- Toolbar & "Max Pages to Scan" field ---------- */
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.pages-field {
+  border-radius: var(--radius-pill);
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid var(--miti-border);
+  background: var(--miti-white);
+  padding: 6px 14px 6px 16px;
+  box-shadow: var(--shadow-sm);
+}
+
+.pages-field span {
+  font-size: 11.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--miti-ink-soft);
+  white-space: nowrap;
+}
+
+.pages-field input {
+  border-radius: var(--radius-sm);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 600;
+  width: 68px;
+  text-align: center;
+  padding: 5px 4px;
+  border: 1px solid var(--miti-border);
+  background: var(--miti-canvas);
+}
+
+/* ---------- Status pills ---------- */
+.pill {
+  border-radius: var(--radius-pill);
+  display: inline-block;
+  font-weight: 700;
+  padding: 3px 9px;
+}
+
+/* ---------- Replaces former inline styles ---------- */
+/* The header toolbar sits flush with the header's bottom border */
+.miti-header .toolbar { margin-bottom: 0; }

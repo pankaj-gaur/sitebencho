@@ -1,0 +1,13 @@
+/*
+ * parity-history.css — styles shared by exactly these pages:
+ *   - index.html (Site Parity)
+ *   - history.html (History)
+ * Loaded after main.css and before each page's own stylesheet.
+ */
+
+thead th {
+  border-bottom: 1px solid var(--miti-border);
+}
+
+/* ---------- Utilities (replace former inline styles) ---------- */
+.text-muted { color: var(--miti-muted); }

@@ -1,0 +1,16 @@
+/*
+ * history-snapshot.css — styles shared by exactly these pages:
+ *   - history.html (History)
+ *   - snapshots.html (Daily Snapshots)
+ * Loaded after main.css and before each page's own stylesheet.
+ */
+
+.pages-field.spacer {
+  visibility: hidden;
+}
+
+.pages-field.spacer input {
+  box-sizing: border-box;
+  height: 37px;
+  padding: 10px 12px;
+}

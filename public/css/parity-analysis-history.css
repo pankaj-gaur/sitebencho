@@ -1,0 +1,94 @@
+/*
+ * parity-analysis-history.css — styles shared by exactly these pages:
+ *   - index.html (Site Parity)
+ *   - analysis.html (Site Analysis)
+ *   - history.html (History)
+ * Loaded after main.css and before each page's own stylesheet.
+ */
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  padding: 0;
+  min-height: 100vh;
+}
+
+.masthead h1 {
+  color: var(--miti-ink);
+  margin: 0 0 12px;
+}
+
+.masthead .sub {
+  font-size: 14.5px;
+  color: var(--miti-ink-soft);
+  max-width: 880px;
+  line-height: 1.6;
+}
+
+.masthead-title-row h1 {
+  margin: 0;
+}
+
+.info-icon-btn {
+  color: #d97757;
+}
+
+.info-popover {
+  box-shadow: 0 10px 30px rgba(0,0,0,0.14);
+}
+
+.info-popover.open {
+  animation: modalFadeIn 0.15s var(--ease);
+}
+
+.toolbar {
+  margin-bottom: 18px;
+}
+
+.pages-field input {
+  color: var(--miti-ink);
+}
+
+.report-link {
+  border-radius: var(--radius-pill);
+  font-weight: 700;
+  color: var(--miti-ink);
+  background: var(--miti-white);
+  text-decoration: none;
+  border: 1px solid var(--miti-border);
+  transition: all 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+thead th {
+  text-align: left;
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--miti-ink-soft);
+  font-weight: 700;
+}
+
+tbody td {
+  border-bottom: 1px solid var(--miti-border);
+}
+
+.empty {
+  text-align: center;
+  color: var(--miti-muted);
+  font-size: 13px;
+}
+
+.pill {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}

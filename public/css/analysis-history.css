@@ -1,0 +1,43 @@
+/*
+ * analysis-history.css — styles shared by exactly these pages:
+ *   - analysis.html (Site Analysis)
+ *   - history.html (History)
+ * Loaded after main.css and before each page's own stylesheet.
+ */
+
+.table-wrap {
+  box-shadow: var(--shadow-sm);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--miti-border);
+  background: var(--miti-white);
+  overflow: hidden;
+}
+
+thead th {
+  padding: 12px 14px;
+  background: var(--miti-surface);
+}
+
+tbody td {
+  padding: 12px 14px;
+  vertical-align: middle;
+  font-size: 13px;
+}
+
+.empty {
+  padding: 36px 16px;
+}
+
+.pill-green {
+  background: var(--green-soft);
+  color: var(--green);
+}
+
+.pill-red {
+  background: var(--red-soft);
+  color: var(--red);
+}
+
+.pill-dim {
+  color: var(--miti-muted);
+}
