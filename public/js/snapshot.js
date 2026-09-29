@@ -70,9 +70,12 @@
 
   function renderSummary() {
     const c = state.config;
-    if (!c || !c.urls.length) { $('setupSummary').textContent = 'No pages yet — add the pages to capture each day'; return; }
+    const max = c && c.limits && c.limits.maxUrls;
+    const planNote = max ? ` Your plan allows up to ${max} page${max === 1 ? '' : 's'}.` : '';
+    if (!c || !c.urls.length) { $('setupSummary').textContent = `No pages yet — add the pages to capture each day.${planNote}`; return; }
     const n = c.urls.length;
-    $('setupSummary').textContent = `${n} page${n === 1 ? '' : 's'}, captured daily at ${c.captureTime} GMT. Open to add, rename or remove pages.`;
+    const count = max ? `${n} of ${max} pages` : `${n} page${n === 1 ? '' : 's'}`;
+    $('setupSummary').textContent = `${count}, captured daily at ${c.captureTime} GMT. Open to add, rename or remove pages.`;
   }
 
   function renderRows() {
@@ -130,6 +133,13 @@
     state.draft = c.urls.map((u) => ({ ...u }));
     $('captureTime').value = c.captureTime;
     $('retentionDays').value = c.retentionDays;
+    // The plan caps how long screenshots are kept ("0 = forever" only without a cap).
+    const maxKeep = c.limits && c.limits.maxRetentionDays;
+    if (maxKeep) {
+      $('retentionDays').max = String(maxKeep);
+      $('retentionDays').min = '1';
+      $('retentionDays').title = `Your plan keeps screenshots for up to ${maxKeep} days.`;
+    }
     renderRows();
   }
 

@@ -2,13 +2,18 @@
  * Daily Snapshots — captures a full-page screenshot of every configured URL
  * once a day and keeps them on disk so the timeline page can browse them.
  *
- * Storage layout (all under ./snapshots, next to ./history):
- *   config.json                      tracked URLs + capture time + retention
- *   state.json                       last automatic run date (survives restarts)
- *   <urlId>/YYYY-MM-DD.jpg           full-page capture for that day
- *   <urlId>/YYYY-MM-DD-thumb.jpg     360x225 thumbnail of the first screen
- *   <urlId>/YYYY-MM-DD.json          metadata (HTTP status, error, height…)
- *   <urlId>/benchmark(.jpg|-thumb.jpg|.json)   the reference capture
+ * Storage layout — one folder per signed-in user (under ./snapshots/users):
+ *   users/<userId>/config.json                  that user's tracked URLs + capture time + retention
+ *   users/<userId>/state.json                   last automatic run date (survives restarts)
+ *   users/<userId>/<urlId>/YYYY-MM-DD.jpg       full-page capture for that day
+ *   users/<userId>/<urlId>/YYYY-MM-DD-thumb.jpg 360x225 thumbnail of the first screen
+ *   users/<userId>/<urlId>/YYYY-MM-DD.json      metadata (HTTP status, error, height…)
+ *   users/<userId>/<urlId>/benchmark(.jpg|-thumb.jpg|.json)   the reference capture
+ *
+ * Every route works inside the signed-in user's folder only. One scheduler
+ * serves everyone: each user's pages are captured at that user's own time,
+ * only while their access (licence) is active, and within their plan's
+ * limits (entitlements snapshotUrls and snapshotRetentionDays).
  *
  * The first successful capture of a URL becomes its benchmark automatically;
  * any later day can be promoted to benchmark from the UI.
@@ -23,8 +28,13 @@ const path = require('path');
 const { chromium } = require('playwright');
 
 const ROOT = path.join(__dirname, 'snapshots');
-const CONFIG_FILE = path.join(ROOT, 'config.json');
-const STATE_FILE = path.join(ROOT, 'state.json');
+const USERS_ROOT = path.join(ROOT, 'users');
+const USER_ID_RE = /^[A-Za-z0-9-]{8,64}$/;
+// How many capture browsers may run at once across all users (each is a full Chromium).
+const MAX_PARALLEL_RUNS = Math.max(1, Number(process.env.MAX_SNAPSHOT_RUNS) || 2);
+// Plan limits used when a plan doesn't set them.
+const DEFAULT_MAX_URLS = 10;
+const DEFAULT_MAX_RETENTION = 400;
 
 const VIEWPORT = { width: 1440, height: 900 };
 const THUMB = { width: 360, height: 225 }; // same 16:10 ratio as the viewport
@@ -82,8 +92,22 @@ function defaultLabel(url) {
     return url;
   }
 }
-function loadConfig() { return { ...DEFAULT_CONFIG, ...readJson(CONFIG_FILE, {}) }; }
-function urlDir(id) { return path.join(ROOT, id); }
+function userRoot(userId) {
+  if (!USER_ID_RE.test(String(userId || ''))) throw new Error('snapshots: invalid user id');
+  return path.join(USERS_ROOT, userId);
+}
+function configFile(userId) { return path.join(userRoot(userId), 'config.json'); }
+function stateFile(userId) { return path.join(userRoot(userId), 'state.json'); }
+function loadConfig(userId) { return { ...DEFAULT_CONFIG, ...readJson(configFile(userId), {}) }; }
+function urlDir(userId, id) { return path.join(userRoot(userId), id); }
+function listUserIds() {
+  try {
+    return fs.readdirSync(USERS_ROOT, { withFileTypes: true })
+      .filter((d) => d.isDirectory() && USER_ID_RE.test(d.name)).map((d) => d.name);
+  } catch (e) {
+    return [];
+  }
+}
 function copyIfExists(from, to) { if (fs.existsSync(from)) fs.copyFileSync(from, to); }
 function removeIfExists(f) { try { fs.unlinkSync(f); } catch (e) { /* not there */ } }
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -176,8 +200,8 @@ async function captureOne(browser, url, outBase) {
   return meta;
 }
 
-function promoteToBenchmark(id, date) {
-  const dir = urlDir(id);
+function promoteToBenchmark(userId, id, date) {
+  const dir = urlDir(userId, id);
   const src = path.join(dir, date);
   if (!fs.existsSync(`${src}.jpg`)) return false;
   copyIfExists(`${src}.jpg`, path.join(dir, 'benchmark.jpg'));
@@ -187,14 +211,16 @@ function promoteToBenchmark(id, date) {
   return true;
 }
 
-function pruneOld(cfg) {
-  const days = Number(cfg.retentionDays) || 0;
+function pruneOld(userId, cfg, maxRetention = Infinity) {
+  let days = Number(cfg.retentionDays) || 0;
+  // The plan's limit applies even if the saved setting is longer (or "forever").
+  if (Number.isFinite(maxRetention) && (days <= 0 || days > maxRetention)) days = maxRetention;
   if (days <= 0) return; // 0 = keep forever
   const cutoff = new Date();
   cutoff.setDate(cutoff.getDate() - days);
   const cutoffStr = localDate(cutoff);
   for (const u of cfg.urls) {
-    const dir = urlDir(u.id);
+    const dir = urlDir(userId, u.id);
     if (!fs.existsSync(dir)) continue;
     for (const f of fs.readdirSync(dir)) {
       const m = f.match(/^(\d{4}-\d{2}-\d{2})/);
@@ -204,69 +230,106 @@ function pruneOld(cfg) {
 }
 
 // ---------------------------------------------------------------------------
-// run orchestration
+// run orchestration — one run state per user; at most MAX_PARALLEL_RUNS
+// capture browsers across everyone.
 // ---------------------------------------------------------------------------
-const run = {
-  status: 'idle', // idle | running
-  trigger: null,  // schedule | manual | setup
-  done: 0,
-  total: 0,
-  current: null,
-  startedAt: null,
-  finishedAt: null,
-  lastErrors: [],
-};
-const pendingIds = new Set(); // URLs added while a run was already going
+const runs = new Map();        // userId -> run state
+const pendingIds = new Map();  // userId -> Set of URL ids added while busy
+let activeRuns = 0;
 
-async function runCapture({ trigger, onlyIds = null, skipExisting = false, logErr }) {
-  if (run.status === 'running') {
-    if (onlyIds) onlyIds.forEach((id) => pendingIds.add(id));
-    return false;
+function runOf(userId) {
+  if (!runs.has(userId)) {
+    runs.set(userId, {
+      status: 'idle', // idle | running
+      trigger: null,  // schedule | manual | setup
+      done: 0,
+      total: 0,
+      current: null,
+      startedAt: null,
+      finishedAt: null,
+      lastErrors: [],
+    });
   }
-  const cfg = loadConfig();
+  return runs.get(userId);
+}
+
+function addPending(userId, ids) {
+  if (!pendingIds.has(userId)) pendingIds.set(userId, new Set());
+  ids.forEach((id) => pendingIds.get(userId).add(id));
+}
+
+/**
+ * Starts a capture run for one user. Returns 'started', 'already-running'
+ * (this user's run is going; onlyIds are queued for right after it) or
+ * 'busy' (too many runs across all users; onlyIds are retried shortly).
+ * `limits` = { maxUrls, maxRetention } from the user's plan.
+ */
+function startCapture({ userId, trigger, onlyIds = null, skipExisting = false, limits, logErr }) {
+  const run = runOf(userId);
+  if (run.status === 'running') {
+    if (onlyIds) addPending(userId, onlyIds);
+    return 'already-running';
+  }
+  if (activeRuns >= MAX_PARALLEL_RUNS) {
+    if (onlyIds) {
+      addPending(userId, onlyIds);
+      setTimeout(() => drainPending(userId, limits, logErr), 60000).unref();
+    }
+    return 'busy';
+  }
+  const cfg = loadConfig(userId);
   const today = localDate();
-  let targets = cfg.urls.filter((u) => !onlyIds || onlyIds.includes(u.id));
-  if (skipExisting) targets = targets.filter((u) => !fs.existsSync(path.join(urlDir(u.id), `${today}.jpg`)));
+  // Only the first maxUrls pages are captured if the plan was lowered after they were added.
+  const allowed = cfg.urls.slice(0, limits.maxUrls);
+  let targets = allowed.filter((u) => !onlyIds || onlyIds.includes(u.id));
+  if (skipExisting) targets = targets.filter((u) => !fs.existsSync(path.join(urlDir(userId, u.id), `${today}.jpg`)));
 
   Object.assign(run, {
     status: 'running', trigger, done: 0, total: targets.length, current: null,
     startedAt: new Date().toISOString(), finishedAt: null, lastErrors: [],
   });
+  activeRuns += 1;
 
-  let browser;
-  try {
-    if (targets.length) browser = await chromium.launch();
-    for (const u of targets) {
-      run.current = u.url;
-      const dir = urlDir(u.id);
-      ensureDir(dir);
-      const meta = await captureOne(browser, u.url, path.join(dir, today));
-      if (meta.error) run.lastErrors.push({ url: u.url, error: meta.error });
-      // First successful (2xx) capture becomes the benchmark automatically —
-      // an error page is never used as the reference.
-      if (meta.ok && !meta.error && !fs.existsSync(path.join(dir, 'benchmark.jpg'))) {
-        promoteToBenchmark(u.id, today);
+  (async () => {
+    let browser;
+    try {
+      if (targets.length) browser = await chromium.launch();
+      for (const u of targets) {
+        run.current = u.url;
+        const dir = urlDir(userId, u.id);
+        ensureDir(dir);
+        const meta = await captureOne(browser, u.url, path.join(dir, today));
+        if (meta.error) run.lastErrors.push({ url: u.url, error: meta.error });
+        // First successful (2xx) capture becomes the benchmark automatically —
+        // an error page is never used as the reference.
+        if (meta.ok && !meta.error && !fs.existsSync(path.join(dir, 'benchmark.jpg'))) {
+          promoteToBenchmark(userId, u.id, today);
+        }
+        run.done += 1;
+        if (run.done < targets.length) await sleep(GAP_MS);
       }
-      run.done += 1;
-      if (run.done < targets.length) await sleep(GAP_MS);
+      pruneOld(userId, cfg, limits.maxRetention);
+    } catch (e) {
+      if (logErr) logErr('daily snapshot run failed', e);
+      run.lastErrors.push({ url: run.current, error: e && e.message ? e.message : String(e) });
+    } finally {
+      if (browser) await browser.close().catch(() => {});
+      activeRuns -= 1;
+      run.status = 'idle';
+      run.current = null;
+      run.finishedAt = new Date().toISOString();
     }
-    pruneOld(cfg);
-  } catch (e) {
-    if (logErr) logErr('daily snapshot run failed', e);
-    run.lastErrors.push({ url: run.current, error: e && e.message ? e.message : String(e) });
-  } finally {
-    if (browser) await browser.close().catch(() => {});
-    run.status = 'idle';
-    run.current = null;
-    run.finishedAt = new Date().toISOString();
-  }
+    drainPending(userId, limits, logErr);
+  })();
+  return 'started';
+}
 
-  if (pendingIds.size) {
-    const ids = Array.from(pendingIds);
-    pendingIds.clear();
-    setTimeout(() => runCapture({ trigger: 'setup', onlyIds: ids, logErr }), 500);
-  }
-  return true;
+function drainPending(userId, limits, logErr) {
+  const set = pendingIds.get(userId);
+  if (!set || !set.size || runOf(userId).status === 'running') return;
+  const ids = Array.from(set);
+  pendingIds.delete(userId);
+  setTimeout(() => startCapture({ userId, trigger: 'setup', onlyIds: ids, limits, logErr }), 500).unref();
 }
 
 function minutesOf(hhmm) {
@@ -274,9 +337,9 @@ function minutesOf(hhmm) {
   return (h || 0) * 60 + (m || 0);
 }
 
-function nextRunAt(cfg) {
+function nextRunAt(userId, cfg) {
   if (!cfg.urls.length) return null;
-  const state = readJson(STATE_FILE, {});
+  const state = readJson(stateFile(userId), {});
   const now = new Date();
   const mins = minutesOf(cfg.captureTime);
   // Built with Date.UTC so the resulting instant is always "mins past
@@ -291,46 +354,86 @@ function nextRunAt(cfg) {
   return next.toISOString();
 }
 
-function startScheduler(logErr) {
+// Plan limits for a user object that carries access.entitlements (req.user, or built below).
+function limitsFor(auth, user) {
+  return {
+    maxUrls: auth.getLimit(user, 'snapshotUrls', DEFAULT_MAX_URLS),
+    maxRetention: auth.getLimit(user, 'snapshotRetentionDays', DEFAULT_MAX_RETENTION),
+  };
+}
+
+// Access check for scheduled runs (no request): the user must still exist and have access.
+async function accessFor(auth, userId) {
+  const user = auth.store.getUserById(userId);
+  if (!user) return null;
+  const access = await auth.getUserAccess(user.email);
+  return access.allowed ? { access } : null;
+}
+
+function startScheduler(auth, logErr) {
+  let ticking = false;
   const tick = async () => {
+    if (ticking) return;
+    ticking = true;
     try {
-      const cfg = loadConfig();
-      if (!cfg.urls.length || run.status === 'running') return;
-      const state = readJson(STATE_FILE, {});
-      const today = localDate();
-      if (state.lastAutoRun === today) return;
       const now = new Date();
-      if (now.getUTCHours() * 60 + now.getUTCMinutes() < minutesOf(cfg.captureTime)) return;
-      // skipExisting: URLs already captured today (e.g. just added, or a
-      // manual "Capture now") aren't captured twice.
-      const started = await runCapture({ trigger: 'schedule', skipExisting: true, logErr });
-      if (started) writeJson(STATE_FILE, { ...readJson(STATE_FILE, {}), lastAutoRun: today });
+      const today = localDate();
+      const nowMins = now.getUTCHours() * 60 + now.getUTCMinutes();
+      for (const userId of listUserIds()) {
+        try {
+          const cfg = loadConfig(userId);
+          if (!cfg.urls.length || runOf(userId).status === 'running') continue;
+          const state = readJson(stateFile(userId), {});
+          if (state.lastAutoRun === today) continue;
+          if (nowMins < minutesOf(cfg.captureTime)) continue;
+          const who = await accessFor(auth, userId);
+          if (!who) continue; // access ended (e.g. licence expired) — no captures
+          // skipExisting: URLs already captured today (e.g. just added, or a
+          // manual "Capture now") aren't captured twice.
+          const result = startCapture({ userId, trigger: 'schedule', skipExisting: true, limits: limitsFor(auth, who), logErr });
+          if (result === 'started') writeJson(stateFile(userId), { ...readJson(stateFile(userId), {}), lastAutoRun: today });
+          // 'busy': other users' runs are going — try again on the next tick.
+        } catch (e) {
+          logErr(`snapshot scheduler failed for user ${userId}`, e);
+        }
+      }
     } catch (e) {
       logErr('snapshot scheduler tick failed', e);
+    } finally {
+      ticking = false;
     }
   };
-  setTimeout(tick, 5000);   // catch up shortly after the server starts
-  setInterval(tick, 60000); // then check once a minute
+  setTimeout(tick, 5000).unref();   // catch up shortly after the server starts
+  setInterval(tick, 60000).unref(); // then check once a minute
 }
 
 // ---------------------------------------------------------------------------
 // routes
 // ---------------------------------------------------------------------------
-function mountSnapshots(app, { logErr = (c, e) => console.error(c, e) } = {}) {
-  ensureDir(ROOT);
+function mountSnapshots(app, { logErr = (c, e) => console.error(c, e), auth } = {}) {
+  if (!auth) throw new Error('mountSnapshots needs { auth } (the Keycard instance)');
+  ensureDir(USERS_ROOT);
+  const uid = (req) => req.user.id;
+  const jsonLimits = (l) => ({
+    maxUrls: Number.isFinite(l.maxUrls) ? l.maxUrls : null,
+    maxRetentionDays: Number.isFinite(l.maxRetention) ? l.maxRetention : null,
+  });
 
   app.get('/api/snapshots/config', (req, res) => {
-    const cfg = loadConfig();
+    const userId = uid(req);
+    const cfg = loadConfig(userId);
     const urls = cfg.urls.map((u) => {
-      const bm = readJson(path.join(urlDir(u.id), 'benchmark.json'), null);
-      return { ...u, benchmark: bm && fs.existsSync(path.join(urlDir(u.id), 'benchmark.jpg')) ? bm : null };
+      const bm = readJson(path.join(urlDir(userId, u.id), 'benchmark.json'), null);
+      return { ...u, benchmark: bm && fs.existsSync(path.join(urlDir(userId, u.id), 'benchmark.jpg')) ? bm : null };
     });
-    res.json({ ok: true, configured: urls.length > 0, ...cfg, urls });
+    res.json({ ok: true, configured: urls.length > 0, ...cfg, urls, limits: jsonLimits(limitsFor(auth, req.user)) });
   });
 
   app.put('/api/snapshots/config', (req, res) => {
     const body = req.body || {};
-    const current = loadConfig();
+    const userId = uid(req);
+    const limits = limitsFor(auth, req.user);
+    const current = loadConfig(userId);
     const byId = new Map(current.urls.map((u) => [u.id, u]));
 
     if (!Array.isArray(body.urls)) return res.status(400).json({ ok: false, error: 'urls must be an array.' });
@@ -340,6 +443,9 @@ function mountSnapshots(app, { logErr = (c, e) => console.error(c, e) } = {}) {
     const retention = body.retentionDays === undefined ? current.retentionDays : Number(body.retentionDays);
     if (!Number.isInteger(retention) || retention < 0 || retention > 3650) {
       return res.status(400).json({ ok: false, error: 'Keep-for days must be a whole number from 0 to 3650.' });
+    }
+    if (Number.isFinite(limits.maxRetention) && (retention === 0 || retention > limits.maxRetention)) {
+      return res.status(400).json({ ok: false, error: `Your plan keeps screenshots for up to ${limits.maxRetention} days. Choose 1 to ${limits.maxRetention}.` });
     }
 
     const next = [];
@@ -362,36 +468,43 @@ function mountSnapshots(app, { logErr = (c, e) => console.error(c, e) } = {}) {
     if (invalid.length) {
       return res.status(400).json({ ok: false, error: `Not a valid web address: ${invalid.filter(Boolean).join(', ') || '(empty)'}` });
     }
+    if (next.length > limits.maxUrls && next.length > current.urls.length) {
+      return res.status(400).json({ ok: false, error: `Your plan allows up to ${limits.maxUrls} tracked page${limits.maxUrls === 1 ? '' : 's'}. Remove some before adding more.` });
+    }
 
     // Removed entries lose their stored screenshots too (the UI confirms first).
     const keptIds = new Set(next.map((u) => u.id));
     for (const u of current.urls) {
       if (!keptIds.has(u.id)) {
-        try { fs.rmSync(urlDir(u.id), { recursive: true, force: true }); } catch (e) { logErr(`failed to delete snapshots for ${u.url}`, e); }
+        try { fs.rmSync(urlDir(userId, u.id), { recursive: true, force: true }); } catch (e) { logErr(`failed to delete snapshots for ${u.url}`, e); }
       }
     }
 
     const cfg = { urls: next, captureTime: body.captureTime || current.captureTime, retentionDays: retention };
-    writeJson(CONFIG_FILE, cfg);
+    writeJson(configFile(userId), cfg);
 
     // New URLs are captured straight away so they get a benchmark today.
     const newIds = next.filter((u) => !byId.has(u.id)).map((u) => u.id);
-    if (newIds.length) runCapture({ trigger: 'setup', onlyIds: newIds, logErr });
+    if (newIds.length) startCapture({ userId, trigger: 'setup', onlyIds: newIds, limits, logErr });
 
     res.json({ ok: true, ...cfg, capturingNew: newIds.length });
   });
 
   app.get('/api/snapshots/status', (req, res) => {
-    const cfg = loadConfig();
-    const state = readJson(STATE_FILE, {});
-    res.json({ ok: true, ...run, pending: pendingIds.size, lastAutoRun: state.lastAutoRun || null, nextRunAt: nextRunAt(cfg), captureTime: cfg.captureTime });
+    const userId = uid(req);
+    const cfg = loadConfig(userId);
+    const state = readJson(stateFile(userId), {});
+    const pending = pendingIds.has(userId) ? pendingIds.get(userId).size : 0;
+    res.json({ ok: true, ...runOf(userId), pending, lastAutoRun: state.lastAutoRun || null, nextRunAt: nextRunAt(userId, cfg), captureTime: cfg.captureTime });
   });
 
   app.post('/api/snapshots/run', (req, res) => {
-    if (run.status === 'running') return res.status(409).json({ ok: false, error: 'A capture is already running.' });
-    if (!loadConfig().urls.length) return res.status(400).json({ ok: false, error: 'Add at least one URL first.' });
+    const userId = uid(req);
+    if (runOf(userId).status === 'running') return res.status(409).json({ ok: false, error: 'A capture is already running.' });
+    if (!loadConfig(userId).urls.length) return res.status(400).json({ ok: false, error: 'Add at least one URL first.' });
     const onlyIds = req.body && Array.isArray(req.body.urlIds) ? req.body.urlIds : null;
-    runCapture({ trigger: 'manual', onlyIds, logErr });
+    const result = startCapture({ userId, trigger: 'manual', onlyIds, limits: limitsFor(auth, req.user), logErr });
+    if (result === 'busy') return res.status(429).json({ ok: false, error: 'Other captures are running right now. Try again in a few minutes.' });
     res.json({ ok: true });
   });
 
@@ -400,7 +513,7 @@ function mountSnapshots(app, { logErr = (c, e) => console.error(c, e) } = {}) {
     const { urlId } = req.query;
     const year = String(req.query.year || new Date().getFullYear());
     if (!ID_RE.test(String(urlId || ''))) return res.status(400).json({ ok: false, error: 'A valid urlId is required.' });
-    const dir = urlDir(urlId);
+    const dir = urlDir(uid(req), urlId);
     const days = {};
     const years = new Set([String(new Date().getFullYear())]);
     if (fs.existsSync(dir)) {
@@ -431,7 +544,7 @@ function mountSnapshots(app, { logErr = (c, e) => console.error(c, e) } = {}) {
     if (!ID_RE.test(String(urlId || '')) || !DATE_RE.test(String(date || ''))) {
       return res.status(400).json({ ok: false, error: 'urlId and date (YYYY-MM-DD) are required.' });
     }
-    if (!promoteToBenchmark(urlId, date)) return res.status(404).json({ ok: false, error: 'No capture for that day.' });
+    if (!promoteToBenchmark(uid(req), urlId, date)) return res.status(404).json({ ok: false, error: 'No capture for that day.' });
     res.json({ ok: true });
   });
 
@@ -439,13 +552,13 @@ function mountSnapshots(app, { logErr = (c, e) => console.error(c, e) } = {}) {
   app.get('/snapshot-files/:id/:file', (req, res) => {
     const { id, file } = req.params;
     if (!ID_RE.test(id) || !FILE_RE.test(file)) return res.status(404).end();
-    const f = path.join(urlDir(id), file);
+    const f = path.join(urlDir(uid(req), id), file);
     if (!fs.existsSync(f)) return res.status(404).end();
     res.set('Cache-Control', 'no-cache');
     res.sendFile(f);
   });
 
-  startScheduler(logErr);
+  startScheduler(auth, logErr);
 }
 
-module.exports = { mountSnapshots };
+module.exports = { mountSnapshots, USERS_ROOT };

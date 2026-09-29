@@ -1,3 +1,7 @@
+// Load settings from .env (AUTH_SECRET, ADMIN_EMAILS, SMTP_* …). If dotenv
+// isn't installed, variables must come from the environment instead.
+try { require('dotenv').config(); } catch (e) { /* optional */ }
+
 const express = require('express');
 const path = require('path');
 const { chromium } = require('playwright');
@@ -13,7 +17,7 @@ const {
   buildAnalysisCsv,
   buildAnalysisPdfHtml,
 } = require('./report');
-const { saveRun, saveOrUpdateRun, listRuns, getRun, deleteRun } = require('./history');
+const history = require('./history');
 const { generateAiSummary, generatePageForecast, markdownToHtml } = require('./ai-summary');
 
 // Node's default behavior for an unhandled promise rejection is to crash the
@@ -31,8 +35,20 @@ process.on('uncaughtException', (err) => {
   console.error('[server] Uncaught exception (server stayed up):', err);
 });
 
+// Keycard sign-in (settings and plans live in ./auth.js).
+const auth = require('./auth');
+
 const app = express();
+// If Miti runs behind nginx, IIS or Azure, uncomment so rate limits see real client IPs:
+// app.set('trust proxy', 1);
 app.use(express.json());
+app.use(auth.basePath, auth.router);   // sign-in and admin pages under /auth
+// The logo and favicon are public so the sign-in page can show them; everything else needs sign-in.
+['miti-logo.png', 'favicon-64x64.png'].forEach((file) => {
+  app.get(`/${file}`, (req, res) => res.sendFile(path.join(__dirname, 'public', file)));
+});
+app.use(auth.requireAuth);             // everything registered below needs sign-in (pages, /api, snapshots)
+app.use(workspaceContext);             // each signed-in user gets their own crawl/test/scan state (see below)
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Every catch block in this file should call this rather than swallow the
@@ -43,15 +59,127 @@ function logErr(context, err) {
   console.error(`[server] ${context}:`, err && err.stack ? err.stack : err);
 }
 
+// ---------------------------------------------------------------------------
+// Per-user workspaces
+//
+// Every piece of crawl/test/scan/AI state below used to be one global object
+// shared by everyone. Each signed-in user now gets their own copy (a
+// "workspace"). The state names (store, progress, testState, …) are thin
+// proxies that read and write the CURRENT user's workspace, found via
+// AsyncLocalStorage — so the existing code keeps working unchanged, and
+// background work a request starts (crawls, AI summaries, scans that finish
+// after the response was sent) keeps using the workspace of the user who
+// started it.
+// ---------------------------------------------------------------------------
+const { AsyncLocalStorage } = require('async_hooks');
+const requestContext = new AsyncLocalStorage();
+const stateFactories = new Map();   // name -> () => initial value
+const workspaces = new Map();       // userId -> workspace
+const WORKSPACE_IDLE_MS = 12 * 60 * 60 * 1000; // drop idle, non-busy workspaces from memory after 12h
+const MAX_BUSY_USERS = Math.max(1, Number(process.env.MAX_BUSY_USERS) || 3); // people crawling/scanning at once
+
+function defineState(name, init) {
+  stateFactories.set(name, init);
+}
+
+function newWorkspace(user) {
+  const w = { userId: user.id, user, lastUsed: Date.now() };
+  for (const [name, init] of stateFactories) w[name] = init();
+  return w;
+}
+
+function workspaceContext(req, res, next) {
+  let w = workspaces.get(req.user.id);
+  if (!w) {
+    w = newWorkspace(req.user);
+    workspaces.set(req.user.id, w);
+  }
+  w.user = req.user; // latest plan/entitlements
+  w.lastUsed = Date.now();
+  requestContext.run({ workspace: w }, next);
+}
+
+// The current user's workspace. Only callable inside a request (or work it started).
+function ws() {
+  const ctx = requestContext.getStore();
+  if (!ctx || !ctx.workspace) throw new Error('No user workspace in this context');
+  return ctx.workspace;
+}
+
+// Object-valued state: a proxy that forwards every operation to ws()[name].
+function scoped(name) {
+  const cur = () => ws()[name];
+  return new Proxy({}, {
+    get: (t, k) => { const v = cur()[k]; return typeof v === 'function' ? v.bind(cur()) : v; },
+    set: (t, k, v) => { cur()[k] = v; return true; },
+    has: (t, k) => k in cur(),
+    deleteProperty: (t, k) => delete cur()[k],
+    ownKeys: () => Reflect.ownKeys(cur()),
+    getOwnPropertyDescriptor: (t, k) => {
+      const d = Object.getOwnPropertyDescriptor(cur(), k);
+      return d ? { ...d, configurable: true } : undefined;
+    },
+    defineProperty: (t, k, d) => Reflect.defineProperty(cur(), k, d),
+  });
+}
+
+// Scalar state (formerly `let` variables) lives directly on the workspace: W.diffSessionId etc.
+const W = new Proxy({}, {
+  get: (t, k) => ws()[k],
+  set: (t, k, v) => { ws()[k] = v; return true; },
+});
+
+// A person is "busy" while any of their crawls, tests or scans is running.
+function isBusy(w) {
+  const running = (p) => p && p.status === 'running';
+  return !!(w.progress && (running(w.progress.bench) || running(w.progress.cand) || running(w.progress.site)))
+    || !!w.testRunning || !!w.linkScanRunning || !!w.lighthouseRunning;
+}
+
+// Caps how many people can run heavy work at the same time (browsers are
+// memory-hungry). Someone who is already busy can always continue their own work.
+function busyGuard(req, res, next) {
+  if (req.body && req.body.mode === 'history') return next(); // loading saved pages is just a disk read
+  const me = ws();
+  if (isBusy(me)) return next();
+  let others = 0;
+  for (const w of workspaces.values()) if (w !== me && isBusy(w)) others += 1;
+  if (others >= MAX_BUSY_USERS) {
+    return res.status(429).json({ ok: false, error: 'Miti is busy running other people\u2019s scans right now. Try again in a few minutes.' });
+  }
+  next();
+}
+app.post(['/api/crawl/:slot', '/api/test', '/api/analysis/linkscan', '/api/analysis/lighthouse'], busyGuard);
+
+setInterval(() => {
+  const cutoff = Date.now() - WORKSPACE_IDLE_MS;
+  for (const [id, w] of workspaces) if (w.lastUsed < cutoff && !isBusy(w)) workspaces.delete(id);
+}, 30 * 60 * 1000).unref();
+
+// History is stored per user; the plan decides how many runs of each type are kept.
+function userHistory() {
+  const w = ws();
+  return history.forUser(w.userId, { maxEntries: auth.getLimit(w.user, 'runsKept', 30) });
+}
+const saveRun = (...a) => userHistory().saveRun(...a);
+const saveOrUpdateRun = (...a) => userHistory().saveOrUpdateRun(...a);
+const listRuns = (...a) => userHistory().listRuns(...a);
+const getRun = (...a) => userHistory().getRun(...a);
+const deleteRun = (...a) => userHistory().deleteRun(...a);
+
+const AI_NOT_IN_PLAN = 'AI summaries aren\u2019t included in your plan.';
+
 const VALID_SLOTS = ['bench', 'cand', 'site'];
 
-// In-memory only — this is a local single-user tool, nothing persists to disk.
-const store = { bench: null, cand: null, site: null }; // slot -> { origin, pages: Map }
-const progress = {
+// In-memory, per user (see "Per-user workspaces" above); nothing here persists to disk.
+defineState('store', () => ({ bench: null, cand: null, site: null }));
+const store = scoped('store'); // slot -> { origin, pages: Map }
+defineState('progress', () => ({
   bench: { status: 'idle', found: 0, total: 0, error: null, pages: [] },
   cand: { status: 'idle', found: 0, total: 0, error: null, pages: [] },
   site: { status: 'idle', found: 0, total: 0, error: null, pages: [] },
-};
+}));
+const progress = scoped('progress');
 // Tracks which crawl "generation" is current per slot, and how to cancel the
 // one currently running. A dropped client connection does NOT stop the
 // server-side crawl on its own — without this, an abandoned or superseded
@@ -59,8 +187,10 @@ const progress = {
 // and its progress updates can clobber a newer crawl's results for the same
 // slot (which is exactly what "candidate shows 500 when I set max to 20"
 // turned out to be: a stale run from before the setting changed, still alive).
-const crawlGeneration = { bench: 0, cand: 0, site: 0 };
-const activeStop = { bench: null, cand: null, site: null };
+defineState('crawlGeneration', () => ({ bench: 0, cand: 0, site: 0 }));
+const crawlGeneration = scoped('crawlGeneration');
+defineState('activeStop', () => ({ bench: null, cand: null, site: null }));
+const activeStop = scoped('activeStop');
 
 function normalizeSource(html) {
   return (html || '')
@@ -190,8 +320,8 @@ function filenameTimestamp(date) {
 // not a fresh disconnected entry per phase. Reset to null whenever a new
 // crawl starts; the first snapshot saved after that assigns a fresh id,
 // every snapshot after reuses it via saveOrUpdateRun.
-let diffSessionId = null;
-let analysisSessionId = null;
+defineState('diffSessionId', () => null);
+defineState('analysisSessionId', () => null);
 
 // How to pair benchmark and candidate pages for testing — 'path' (default):
 // match pages that share the same normalized path, as when comparing two
@@ -203,7 +333,7 @@ let analysisSessionId = null;
 // new.contentbloom.com/xyz/def are meant to be compared as a pair even
 // though nothing about their paths corresponds). Reset alongside the rest
 // of the session whenever a fresh benchmark crawl starts.
-let diffPairMode = 'path';
+defineState('diffPairMode', () => 'path');
 
 // One AI summary PER PHASE per tool — each phase (crawl, then testing/link
 // scan/Lighthouse) APPENDS a new entry rather than overwriting the previous
@@ -211,10 +341,11 @@ let diffPairMode = 'path';
 // later scan has also run. `entries` is also persisted onto the current
 // history row (see persistAiSummaryEntry) so it survives across restarts and
 // shows up in downloaded reports, exactly like pages/results/link data does.
-const aiSummaryState = {
+defineState('aiSummaryState', () => ({
   diff: { status: 'idle', error: null, updatedAt: null, entries: [], lastAttempt: null },
   analysis: { status: 'idle', error: null, updatedAt: null, entries: [], lastAttempt: null },
-};
+}));
+const aiSummaryState = scoped('aiSummaryState');
 
 // Bumped every time a tool's session is reset (fresh crawl, or an explicit
 // mode-switch reset from the UI). An AI call that was already in flight when
@@ -222,7 +353,8 @@ const aiSummaryState = {
 // it sees the mismatch and discards its result — otherwise a summary from
 // the previous session would get appended into the brand-new session's
 // panel (and saved into its history row) a few seconds after the reset.
-const aiSummaryGen = { diff: 0, analysis: 0 };
+defineState('aiSummaryGen', () => ({ diff: 0, analysis: 0 }));
+const aiSummaryGen = scoped('aiSummaryGen');
 
 function resetAiSummaryState(type) {
   aiSummaryGen[type] += 1;
@@ -252,6 +384,17 @@ function resetAiSummaryState(type) {
 // can be manually retried later (see the /retry endpoint below) without the
 // caller having to reconstruct reportType/dataObject/onUpdate from scratch.
 function triggerAiSummary(type, reportType, dataObject, onUpdate) {
+  // Plans without AI summaries get a clear message in the summary panel instead of a call.
+  if (!auth.hasEntitlement(ws().user, 'aiSummary')) {
+    aiSummaryState[type] = {
+      status: 'error',
+      error: AI_NOT_IN_PLAN,
+      updatedAt: new Date().toISOString(),
+      entries: aiSummaryState[type].entries,
+      lastAttempt: null,
+    };
+    return;
+  }
   const myGen = aiSummaryGen[type];
   aiSummaryState[type] = {
     status: 'generating',
@@ -306,13 +449,13 @@ function saveDiffCrawlSnapshot() {
     const candPages = Array.from(store.cand.pages.values());
     if (benchPages.length === 0 && candPages.length === 0) return;
     let matchedCount;
-    if (diffPairMode === 'position') {
+    if (W.diffPairMode === 'position') {
       matchedCount = Math.min(benchPages.length, candPages.length);
     } else {
       const candPaths = new Set(candPages.map((p) => p.path));
       matchedCount = benchPages.filter((p) => candPaths.has(p.path)).length;
     }
-    const record = saveOrUpdateRun('diff', diffSessionId, {
+    const record = saveOrUpdateRun('diff', W.diffSessionId, {
       benchOrigin: store.bench.origin,
       candOrigin: store.cand.origin,
       benchCount: benchPages.length,
@@ -325,7 +468,7 @@ function saveDiffCrawlSnapshot() {
       testRun: false,
       aiSummaries: aiSummaryState.diff.entries,
     });
-    diffSessionId = record.id;
+    W.diffSessionId = record.id;
   } catch (e) {
     logErr('failed to save diff crawl snapshot to history', e);
   }
@@ -339,7 +482,7 @@ function saveDiffSnapshot(results) {
     if (!results) return;
     const counts = { green: 0, red: 0, amber: 0 };
     results.forEach((r) => { counts[r.status] = (counts[r.status] || 0) + 1; });
-    const record = saveOrUpdateRun('diff', diffSessionId, {
+    const record = saveOrUpdateRun('diff', W.diffSessionId, {
       benchOrigin: store.bench ? store.bench.origin : '',
       candOrigin: store.cand ? store.cand.origin : '',
       benchCount: store.bench ? store.bench.pages.size : 0,
@@ -352,7 +495,7 @@ function saveDiffSnapshot(results) {
       testRun: true,
       aiSummaries: aiSummaryState.diff.entries,
     });
-    diffSessionId = record.id;
+    W.diffSessionId = record.id;
   } catch (e) {
     logErr('failed to save diff run to history', e);
   }
@@ -380,7 +523,7 @@ function saveAnalysisSnapshot() {
     const lighthouseScannedCount = Object.keys(lighthouseState.results).length;
     const avg = (arr) => (arr.length ? Math.round(arr.reduce((a, b) => a + b, 0) / arr.length) : null);
 
-    const record = saveOrUpdateRun('analysis', analysisSessionId, {
+    const record = saveOrUpdateRun('analysis', W.analysisSessionId, {
       siteOrigin: site.origin,
       pageCount: pages.length,
       linkScannedCount,
@@ -394,7 +537,7 @@ function saveAnalysisSnapshot() {
       lhResults: lighthouseState.results,
       aiSummaries: aiSummaryState.analysis.entries,
     });
-    analysisSessionId = record.id;
+    W.analysisSessionId = record.id;
   } catch (e) {
     logErr('failed to save analysis run to history', e);
   }
@@ -437,13 +580,13 @@ app.post('/api/reset/:type', (req, res) => {
   }
 
   if (type === 'diff') {
-    if (testRunning) {
+    if (W.testRunning) {
       return res.status(409).json({ ok: false, error: 'A comparison test is still running. Wait for it to finish before switching modes.' });
     }
     cancelCrawl('bench');
     cancelCrawl('cand');
-    diffSessionId = null;
-    diffPairMode = 'path';
+    W.diffSessionId = null;
+    W.diffPairMode = 'path';
     testState.status = 'idle';
     testState.done = 0;
     testState.total = 0;
@@ -452,11 +595,11 @@ app.post('/api/reset/:type', (req, res) => {
     resetTestPageDetailsState();
     resetAiSummaryState('diff');
   } else {
-    if (linkScanRunning || lighthouseRunning) {
+    if (W.linkScanRunning || W.lighthouseRunning) {
       return res.status(409).json({ ok: false, error: 'A scan is still running. Wait for it to finish before switching modes.' });
     }
     cancelCrawl('site');
-    analysisSessionId = null;
+    W.analysisSessionId = null;
     linkScanState.status = 'idle';
     linkScanState.done = 0;
     linkScanState.total = 0;
@@ -480,6 +623,10 @@ app.post('/api/crawl/:slot', async (req, res) => {
     return res.status(400).json({ ok: false, error: `slot must be one of: ${VALID_SLOTS.join(', ')}` });
   }
   const { url, maxPages, mode, urls, historyType, historyId, historySide } = req.body || {};
+  // Page limit comes from the signed-in user's plan (Trial 50, Standard 200, Pro 500;
+  // 200 when no plan applies). A request can ask for fewer pages, never more.
+  const planMax = auth.getLimit(req.user, 'maxPages', 200);
+  const effectiveMax = Math.min(Number(maxPages) || planMax, planMax);
   const isListMode = mode === 'list';
   const isHistoryMode = mode === 'history';
 
@@ -508,8 +655,8 @@ app.post('/api/crawl/:slot', async (req, res) => {
   // 'bench' is always crawled first in the Diff Inspector flow, so that's
   // the right moment to reset for that tool.
   if (slot === 'bench') {
-    diffSessionId = null;
-    diffPairMode = isListMode ? 'position' : 'path';
+    W.diffSessionId = null;
+    W.diffPairMode = isListMode ? 'position' : 'path';
     testState.status = 'idle';
     testState.done = 0;
     testState.total = 0;
@@ -519,7 +666,7 @@ app.post('/api/crawl/:slot', async (req, res) => {
     resetAiSummaryState('diff');
   }
   if (slot === 'site') {
-    analysisSessionId = null;
+    W.analysisSessionId = null;
     linkScanState.status = 'idle';
     linkScanState.done = 0;
     linkScanState.total = 0;
@@ -617,8 +764,8 @@ app.post('/api/crawl/:slot', async (req, res) => {
 
   try {
     const result = isListMode
-      ? await renderUrlList(urls, { maxPages: maxPages || 500, ...commonOpts })
-      : await crawlSite(startUrl, { maxPages: maxPages || 500, ...commonOpts });
+      ? await renderUrlList(urls, { maxPages: effectiveMax, ...commonOpts })
+      : await crawlSite(startUrl, { maxPages: effectiveMax, ...commonOpts });
 
     if (crawlGeneration[slot] !== myGen) {
       // A newer crawl started while this one was finishing up — don't let
@@ -692,8 +839,9 @@ app.get('/api/pages/:slot', (req, res) => {
   res.json({ ok: true, pages });
 });
 
-const testState = { status: 'idle', done: 0, total: 0, error: null, results: [] };
-let testRunning = false;
+defineState('testState', () => ({ status: 'idle', done: 0, total: 0, error: null, results: [] }));
+const testState = scoped('testState');
+defineState('testRunning', () => false);
 
 app.get('/api/test/progress', (req, res) => {
   res.json({ ok: true, ...testState });
@@ -703,12 +851,12 @@ app.post('/api/test', async (req, res) => {
   if (!store.bench || !store.cand) {
     return res.status(400).json({ ok: false, error: 'Crawl both the benchmark and candidate sites first.' });
   }
-  if (testRunning) {
+  if (W.testRunning) {
     return res.status(409).json({ ok: false, error: 'A test run is already in progress.' });
   }
 
   let pairs = []; // [{ benchPage, candPage }]
-  if (diffPairMode === 'position') {
+  if (W.diffPairMode === 'position') {
     // URL-list mode: the Nth benchmark URL is compared against the Nth
     // candidate URL, full stop — paths, domains, and structures don't need
     // to correspond at all. Extra entries on the longer side are left
@@ -736,7 +884,7 @@ app.post('/api/test', async (req, res) => {
     return res.json({ ok: true, results: [] });
   }
 
-  testRunning = true;
+  W.testRunning = true;
   testState.status = 'running';
   testState.done = 0;
   testState.total = pairs.length;
@@ -891,7 +1039,7 @@ app.post('/api/test', async (req, res) => {
     }
   } catch (e) {
     logErr('test run failed', e);
-    testRunning = false;
+    W.testRunning = false;
     testState.status = 'error';
     testState.error = e && e.message ? e.message : String(e);
     saveDiffSnapshot(results); // partial results are still worth keeping
@@ -904,7 +1052,7 @@ app.post('/api/test', async (req, res) => {
     if (browser) await browser.close();
   }
 
-  testRunning = false;
+  W.testRunning = false;
   testState.status = 'done';
   saveDiffSnapshot(results);
   {
@@ -937,7 +1085,8 @@ app.post('/api/test', async (req, res) => {
 // run (or a fresh benchmark crawl) makes the old indexes stale.
 // ---------------------------------------------------------------------------
 
-const testPageDetailsState = {};
+defineState('testPageDetailsState', () => ({}));
+const testPageDetailsState = scoped('testPageDetailsState');
 
 function resetTestPageDetailsState() {
   Object.keys(testPageDetailsState).forEach((k) => delete testPageDetailsState[k]);
@@ -1038,8 +1187,9 @@ app.get('/api/test/page-details', (req, res) => {
 // progress bar.
 // ---------------------------------------------------------------------------
 
-const linkScanState = { status: 'idle', done: 0, total: 0, error: null, results: {} };
-let linkScanRunning = false;
+defineState('linkScanState', () => ({ status: 'idle', done: 0, total: 0, error: null, results: {} }));
+const linkScanState = scoped('linkScanState');
+defineState('linkScanRunning', () => false);
 
 app.get('/api/analysis/linkscan/progress', (req, res) => {
   res.json({ ok: true, ...linkScanState });
@@ -1050,13 +1200,13 @@ app.post('/api/analysis/linkscan', async (req, res) => {
   if (!site) {
     return res.status(400).json({ ok: false, error: 'Crawl the site first.' });
   }
-  if (linkScanRunning) {
+  if (W.linkScanRunning) {
     return res.status(409).json({ ok: false, error: 'A link scan is already running.' });
   }
 
   const pages = Array.from(site.pages.values());
   const linkChecker = createLinkChecker(); /* politeness-patch:link-checker */
-  linkScanRunning = true;
+  W.linkScanRunning = true;
   linkScanState.status = 'running';
   linkScanState.done = 0;
   linkScanState.total = pages.length;
@@ -1087,7 +1237,7 @@ app.post('/api/analysis/linkscan', async (req, res) => {
       }
       linkScanState.done += 1;
     }
-    linkScanRunning = false;
+    W.linkScanRunning = false;
     linkScanState.status = 'done';
     saveAnalysisSnapshot();
     {
@@ -1115,15 +1265,16 @@ app.post('/api/analysis/linkscan', async (req, res) => {
     res.json({ ok: true, results: linkScanState.results });
   } catch (e) {
     logErr('link scan run failed', e);
-    linkScanRunning = false;
+    W.linkScanRunning = false;
     linkScanState.status = 'error';
     linkScanState.error = e && e.message ? e.message : String(e);
     res.status(500).json({ ok: false, error: linkScanState.error, partialResults: linkScanState.results });
   }
 });
 
-const lighthouseState = { status: 'idle', done: 0, total: 0, error: null, results: {} };
-let lighthouseRunning = false;
+defineState('lighthouseState', () => ({ status: 'idle', done: 0, total: 0, error: null, results: {} }));
+const lighthouseState = scoped('lighthouseState');
+defineState('lighthouseRunning', () => false);
 
 // Per-page "assess these recommendations" AI forecast, triggered on demand
 // from the page-score details popup (NOT part of the phase-summary
@@ -1131,7 +1282,8 @@ let lighthouseRunning = false;
 // by page path; reset whenever new Lighthouse results supersede the old
 // ones, since a stale forecast talking about recommendations that no longer
 // apply would be actively misleading.
-const pageForecastState = {};
+defineState('pageForecastState', () => ({}));
+const pageForecastState = scoped('pageForecastState');
 
 function resetPageForecastState() {
   Object.keys(pageForecastState).forEach((k) => delete pageForecastState[k]);
@@ -1195,6 +1347,7 @@ app.get('/api/analysis/lighthouse/progress', (req, res) => {
 app.post('/api/analysis/page-forecast', (req, res) => {
   const { path: pagePath } = req.body || {};
   if (!pagePath) return res.status(400).json({ ok: false, error: 'path is required' });
+  if (!auth.hasEntitlement(req.user, 'aiSummary')) return res.status(403).json({ ok: false, error: AI_NOT_IN_PLAN });
   const entry = lighthouseState.results[pagePath];
   if (!entry || (!entry.mobile && !entry.desktop)) {
     return res.status(400).json({ ok: false, error: 'No page-score results for this page yet — run "Scan for Page Score" first.' });
@@ -1219,7 +1372,7 @@ app.post('/api/analysis/lighthouse', async (req, res) => {
   if (!site) {
     return res.status(400).json({ ok: false, error: 'Crawl the site first.' });
   }
-  if (lighthouseRunning) {
+  if (W.lighthouseRunning) {
     return res.status(409).json({ ok: false, error: 'A performance scan is already running.' });
   }
 
@@ -1232,7 +1385,7 @@ app.post('/api/analysis/lighthouse', async (req, res) => {
   const allPages = Array.from(site.pages.values());
   const pages = allPages.slice(0, cap);
 
-  lighthouseRunning = true;
+  W.lighthouseRunning = true;
   lighthouseState.status = 'running';
   lighthouseState.done = 0;
   lighthouseState.total = pages.length * 2;
@@ -1287,7 +1440,7 @@ app.post('/api/analysis/lighthouse', async (req, res) => {
 
       await new Promise((r) => setTimeout(r, 500));
     }
-    lighthouseRunning = false;
+    W.lighthouseRunning = false;
     lighthouseState.status = 'done';
     resetPageForecastState(); // new scan results supersede any cached per-page forecasts
     saveAnalysisSnapshot();
@@ -1347,7 +1500,7 @@ app.post('/api/analysis/lighthouse', async (req, res) => {
     res.json({ ok: true, results: lighthouseState.results, scannedCount: pages.length, totalPages: allPages.length });
   } catch (e) {
     logErr('lighthouse run failed', e);
-    lighthouseRunning = false;
+    W.lighthouseRunning = false;
     lighthouseState.status = 'error';
     lighthouseState.error = e && e.message ? e.message : String(e);
     res.status(500).json({ ok: false, error: lighthouseState.error, partialResults: lighthouseState.results });
@@ -1623,7 +1776,7 @@ app.get('/api/report/analysis.pdf', async (req, res) => {
 });
 
 const { mountSnapshots } = require('./snapshots');
-   mountSnapshots(app, { logErr });
+   mountSnapshots(app, { logErr, auth });
    
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {

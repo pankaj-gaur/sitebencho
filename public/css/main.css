@@ -260,3 +260,63 @@ svg.lucide {
 /* ---------- Replaces former inline styles ---------- */
 /* The header toolbar sits flush with the header's bottom border */
 .miti-header .toolbar { margin-bottom: 0; }
+
+/* ---------- Account menu (sign-in) ---------- */
+/* Added to the end of the header toolbar by main.js: email · Admin · Sign out */
+.account-menu {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  background: var(--miti-white);
+  border: 1px solid var(--miti-border);
+  border-radius: var(--radius-pill);
+  padding: 4px 4px 4px 14px;
+  box-shadow: var(--shadow-sm);
+  max-width: 100%;
+}
+
+.account-email {
+  font-size: 12.5px;
+  color: var(--miti-muted);
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin-right: 6px;
+}
+
+.account-menu a,
+.account-menu button {
+  font: inherit;
+  font-size: 11.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--miti-ink-soft);
+  background: none;
+  border: 0;
+  border-radius: var(--radius-pill);
+  padding: 7px 14px;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.18s var(--ease);
+}
+
+.account-menu a:hover,
+.account-menu button:hover {
+  background: var(--miti-surface);
+  color: var(--miti-ink);
+}
+
+.account-menu a:focus-visible,
+.account-menu button:focus-visible {
+  outline: 2px solid var(--miti-accent);
+  outline-offset: 1px;
+}
+
+@media print {
+  .account-menu { display: none; }
+}

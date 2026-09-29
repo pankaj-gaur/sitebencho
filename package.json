@@ -7,14 +7,15 @@
   "scripts": {
     "postinstall": "playwright install --with-deps chromium",
     "start": "node --max-old-space-size=8192 server.js",
-    "encrypt-secret": "node encrypt-secret.js"
+    "encrypt-secret": "node encrypt-secret.js",
+    "migrate": "node scripts/migrate-to-user.js"
   },
   "dependencies": {
     "chrome-launcher": "^1.1.2",
     "crawlee": "^3.11.5",
     "dotenv": "^18.0.4",
     "express": "^4.21.0",
-    "keycard": "github:pankaj-gaur/keycard#v1.1.0",
+    "keycard": "github:pankaj-gaur/keycard#v1.1.1",
     "lighthouse": "^12.2.1",
     "linkinator": "^6.1.2",
     "playwright": "^1.48.0"
