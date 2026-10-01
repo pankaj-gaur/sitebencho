@@ -1,0 +1,9 @@
+{
+	"id": "xIdOc8zcIk6RR9V",
+	"json": "{\"id\":\"xIdOc8zcIk6RR9V\",\"url\":\"https://contentbloom.com/services/content-management/adobe-experience-manager/\",\"uniqueKey\":\"https://contentbloom.com/services/content-management/adobe-experience-manager\",\"method\":\"GET\",\"noRetry\":false,\"retryCount\":0,\"errorMessages\":[],\"headers\":{},\"userData\":{\"__crawlee\":{\"crawlDepth\":1,\"enqueueStrategy\":\"same-domain\"}}}",
+	"method": "GET",
+	"orderNo": 1790767392300,
+	"retryCount": 0,
+	"uniqueKey": "https://contentbloom.com/services/content-management/adobe-experience-manager",
+	"url": "https://contentbloom.com/services/content-management/adobe-experience-manager/"
+}

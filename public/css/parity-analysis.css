@@ -633,3 +633,22 @@ tbody tr:hover {
 
 /* Locks page scroll while a modal is open (was body.style.overflow) */
 body.modal-open { overflow: hidden; }
+
+/* ---------- Live vitals bar (vitals-widget, layout="bar") ----------
+   Sits in the Download CSV / PDF row, pushed to the right-hand end.
+   On narrow screens it wraps onto its own line under the buttons. */
+.report-links {
+  flex-wrap: wrap;
+}
+
+.report-vitals {
+  margin-left: auto;
+  max-width: 100%;
+  min-height: 32px;              /* reserve the space before widget.js loads */
+  --vt-bar-height: 32px;         /* same height as the Download buttons */
+  --vt-radius: var(--radius-pill);
+}
+
+@media print {
+  .report-vitals { display: none; }
+}

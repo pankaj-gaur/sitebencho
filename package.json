@@ -15,9 +15,10 @@
     "crawlee": "^3.11.5",
     "dotenv": "^18.0.4",
     "express": "^4.21.0",
-    "keycard": "github:pankaj-gaur/keycard#v1.1.1",
+    "keycard": "github:pankaj-gaur/keycard#v1.3.0",
     "lighthouse": "^12.2.1",
     "linkinator": "^6.1.2",
-    "playwright": "^1.48.0"
+    "playwright": "^1.48.0",
+    "vitals-widget": "github:pankaj-gaur/vitals-widget#v1.0.0"
   }
 }

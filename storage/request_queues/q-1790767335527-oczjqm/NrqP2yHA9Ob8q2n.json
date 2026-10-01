@@ -1,0 +1,9 @@
+{
+	"id": "NrqP2yHA9Ob8q2n",
+	"json": "{\"id\":\"NrqP2yHA9Ob8q2n\",\"url\":\"https://contentbloom.com/services/content-management/dotcms/\",\"uniqueKey\":\"https://contentbloom.com/services/content-management/dotcms\",\"method\":\"GET\",\"noRetry\":false,\"retryCount\":0,\"errorMessages\":[],\"headers\":{},\"userData\":{\"__crawlee\":{\"crawlDepth\":1,\"enqueueStrategy\":\"same-domain\"}}}",
+	"method": "GET",
+	"orderNo": 1790767406849,
+	"retryCount": 0,
+	"uniqueKey": "https://contentbloom.com/services/content-management/dotcms",
+	"url": "https://contentbloom.com/services/content-management/dotcms/"
+}

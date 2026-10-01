@@ -8,8 +8,8 @@
  *
  * Also handles sign-in (Keycard): the account menu in the header, sending the
  * person to the sign-in page when their session ends, and capping
- * "Max Pages to Scan" at their plan's limit. Window.Miti.me resolves to the
- * signed-in user.
+ * "Max Pages to Scan" at their limit. Window.Miti.me resolves to
+ * /api/account ({ mode, user, plan, limits }); with sign-in off there is no menu.
  */
 (function(){
   "use strict";
@@ -77,10 +77,10 @@
     });
   };
 
-  // Signed-in user: { email, isAdmin, access: { entitlements, license } }, or null.
-  const me = nativeFetch(`${AUTH}/me`, { credentials: "same-origin", headers: { Accept: "application/json" } })
-    .then(r => (r.ok ? r.json() : null))
-    .then(d => (d && d.user) || null, () => null);
+  // Account info from the server: { mode, user, plan, limits }.
+  //   mode "full": sign-in with plans; "signin": sign-in only; "off": no sign-in.
+  const me = nativeFetch("/api/account", { credentials: "same-origin", headers: { Accept: "application/json" } })
+    .then(r => (r.ok ? r.json() : null), () => null);
 
   // Licence managers aren't admins but still get the (limited) admin panel.
   function canOpenAdmin(user){
@@ -95,10 +95,11 @@
       .then(r => { location.href = r.redirect || `${AUTH}/login`; }, () => { location.href = `${AUTH}/login`; });
   }
 
-  // Account pill at the end of the header toolbar: email · Admin · Sign out.
-  function initAccountMenu(user, showAdmin){
+  // Account pill at the end of the header toolbar: email · plan · Admin · Sign out.
+  function initAccountMenu(account, showAdmin){
     const toolbar = document.querySelector(".miti-header .toolbar");
     if(!toolbar) return;
+    const user = account.user;
     const menu = document.createElement("div");
     menu.className = "account-menu";
     menu.setAttribute("role", "group");
@@ -107,20 +108,37 @@
     const email = document.createElement("span");
     email.className = "account-email";
     email.textContent = user.email;
-    email.title = user.access && user.access.license
-      ? `${user.email} · ${user.access.license.planName || "Licence"} until ${new Date(user.access.license.expiresAt).toLocaleDateString()}`
-      : user.email;
+    email.title = user.email;
     menu.appendChild(email);
+
+    // Current plan → plans page (only when plans are on).
+    if(account.plan){
+      const p = account.plan;
+      const plan = document.createElement("a");
+      plan.href = `${AUTH}/plans`;
+      plan.className = "account-plan";
+      if(p.name === "Free") plan.textContent = "Free · Upgrade";
+      else if(p.name === "Trial") plan.textContent = `Trial · ${p.daysLeft} day${p.daysLeft === 1 ? "" : "s"} left`;
+      else plan.textContent = p.name;
+      plan.title = "See plans, upgrade, invoices and support";
+      menu.appendChild(plan);
+    }
 
     if(showAdmin){
       const admin = document.createElement("a");
       admin.href = `${AUTH}/admin`;
-      admin.innerHTML = '<i data-lucide="shield"></i> Admin';
+      admin.className = "account-icon";
+      admin.title = "Admin";
+      admin.setAttribute("aria-label", "Admin");
+      admin.innerHTML = '<i data-lucide="shield" aria-hidden="true"></i><span class="account-label">Admin</span>';
       menu.appendChild(admin);
     }
     const out = document.createElement("button");
     out.type = "button";
-    out.innerHTML = '<i data-lucide="log-out"></i> Sign out';
+    out.className = "account-icon";
+    out.title = "Sign out";
+    out.setAttribute("aria-label", "Sign out");
+    out.innerHTML = '<i data-lucide="log-out" aria-hidden="true"></i><span class="account-label">Sign out</span>';
     out.addEventListener("click", signOut);
     menu.appendChild(out);
 
@@ -128,12 +146,11 @@
     refreshIcons();
   }
 
-  // "Max Pages to Scan" can't go above the plan's limit (the server enforces it too).
-  function initPageLimit(user){
+  // "Max Pages to Scan" can't go above the limit (the server enforces it too).
+  function initPageLimit(limit){
     const input = $("maxPages");
-    const limit = user.access && user.access.entitlements ? user.access.entitlements.maxPages : null;
     if(!input || typeof limit !== "number") return;
-    input.title = `Your plan allows up to ${limit} pages per crawl.`;
+    input.title = `You can scan up to ${limit} pages per crawl.`;
     const clamp = () => {
       const n = parseInt(input.value, 10);
       if(!Number.isFinite(n) || n > limit) input.value = String(limit);
@@ -142,10 +159,11 @@
     input.addEventListener("change", clamp);
   }
 
-  me.then(user => {
-    if(!user) return;
-    initPageLimit(user);
-    canOpenAdmin(user).then(showAdmin => initAccountMenu(user, showAdmin));
+  me.then(account => {
+    if(!account) return;
+    initPageLimit(account.limits && account.limits.maxPages);
+    if(!account.user) return; // sign-in is off: no account menu
+    canOpenAdmin(account.user).then(showAdmin => initAccountMenu(account, showAdmin));
   });
 
   window.Miti = { $, refreshIcons, escapeHtml, me };

@@ -1,0 +1,9 @@
+{
+	"id": "43zYjljGQXACpdK",
+	"json": "{\"id\":\"43zYjljGQXACpdK\",\"url\":\"https://contentbloom.com/blog/author/b-hirons/\",\"uniqueKey\":\"https://contentbloom.com/blog/author/b-hirons\",\"method\":\"GET\",\"noRetry\":false,\"retryCount\":0,\"errorMessages\":[],\"headers\":{},\"userData\":{\"__crawlee\":{\"crawlDepth\":1,\"enqueueStrategy\":\"same-domain\"}}}",
+	"method": "GET",
+	"orderNo": 1790773032867,
+	"retryCount": 0,
+	"uniqueKey": "https://contentbloom.com/blog/author/b-hirons",
+	"url": "https://contentbloom.com/blog/author/b-hirons/"
+}

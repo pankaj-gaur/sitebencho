@@ -1,0 +1,9 @@
+{
+	"id": "PJCCyRujr8MZhDg",
+	"json": "{\"id\":\"PJCCyRujr8MZhDg\",\"url\":\"https://contentbloom.com/work/siemens-business-agility/\",\"uniqueKey\":\"https://contentbloom.com/work/siemens-business-agility\",\"method\":\"GET\",\"noRetry\":false,\"retryCount\":0,\"errorMessages\":[],\"headers\":{},\"userData\":{\"__crawlee\":{\"crawlDepth\":1,\"enqueueStrategy\":\"same-domain\"}}}",
+	"method": "GET",
+	"orderNo": 1790766818418,
+	"retryCount": 0,
+	"uniqueKey": "https://contentbloom.com/work/siemens-business-agility",
+	"url": "https://contentbloom.com/work/siemens-business-agility/"
+}

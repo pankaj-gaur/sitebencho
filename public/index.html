@@ -10,6 +10,7 @@
 <script src="js/parity-analysis-snapshot.js" defer></script>
 <script src="js/parity-analysis.js" defer></script>
 <script src="js/parity.js" defer></script>
+<script src="/vitals/widget.js" defer></script>
 <link rel="icon" type="image/png" href="favicon-64x64.png">
 <link rel="apple-touch-icon" href="favicon-64x64.png">
 <link rel="stylesheet" href="css/main.css">
@@ -23,7 +24,7 @@
 <body>
 <div class="site-wrap">
 <!-- Header -->
-<header class="miti-header">
+<header class="miti-header miti-header--one-row">
 <div class="brand-badge">
 <img alt="Miti" class="brand-logo" src="miti-logo.png">
 </div>
@@ -34,10 +35,6 @@
 <a href="snapshots.html"><i data-lucide="camera"></i> Daily Snapshots</a>
 <a href="history.html" class=""><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="history" aria-hidden="true" class="lucide lucide-history"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path><path d="M12 7v5l4 2"></path></svg> History</a>
 </nav>
-<label class="pages-field">
-<span class="">Max Pages to Scan</span>
-<input id="maxPages" inputmode="numeric" type="text" value="200">
-</label>
 </div>
 </header>
 <!-- Masthead -->
@@ -78,9 +75,15 @@
 <div class="ai-summary-body" id="aiSummaryBody"></div>
 </div>
 <!-- Reports -->
-<div class="report-links" id="crawlReportLinks">
+<div class="report-links report-links--tools" id="crawlReportLinks">
 <a class="report-link disabled" href="/api/report/diff.csv" id="dlCsv"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="file-spreadsheet" aria-hidden="true" class="lucide lucide-file-spreadsheet"><path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z"></path><path d="M14 2v5a1 1 0 0 0 1 1h5"></path><path d="M8 13h2"></path><path d="M14 13h2"></path><path d="M8 17h2"></path><path d="M14 17h2"></path></svg> Download CSV</a>
 <a class="report-link disabled" href="/api/report/diff.pdf" id="dlPdf"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="file-text" aria-hidden="true" class="lucide lucide-file-text"><path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z"></path><path d="M14 2v5a1 1 0 0 0 1 1h5"></path><path d="M10 9H8"></path><path d="M16 13H8"></path><path d="M16 17H8"></path></svg> Download PDF</a>
+<label class="pages-field">
+<span class="">Max Pages to Scan</span>
+<input id="maxPages" inputmode="numeric" type="text" value="200">
+</label>
+
+<vitals-widget layout="bar" class="report-vitals"></vitals-widget>
 </div>
 <!-- Two-Column Crawler Panels -->
 <div class="panels">

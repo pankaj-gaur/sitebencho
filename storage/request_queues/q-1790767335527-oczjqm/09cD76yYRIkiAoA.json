@@ -1,0 +1,9 @@
+{
+	"id": "09cD76yYRIkiAoA",
+	"json": "{\"id\":\"09cD76yYRIkiAoA\",\"url\":\"https://contentbloom.com/blog/2023/02/15/\",\"uniqueKey\":\"https://contentbloom.com/blog/2023/02/15\",\"method\":\"GET\",\"noRetry\":false,\"retryCount\":0,\"errorMessages\":[],\"headers\":{},\"userData\":{\"__crawlee\":{\"crawlDepth\":1,\"enqueueStrategy\":\"same-domain\"}}}",
+	"method": "GET",
+	"orderNo": 1790767402092,
+	"retryCount": 0,
+	"uniqueKey": "https://contentbloom.com/blog/2023/02/15",
+	"url": "https://contentbloom.com/blog/2023/02/15/"
+}

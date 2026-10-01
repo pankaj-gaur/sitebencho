@@ -1,0 +1,9 @@
+{
+	"id": "mYMNn2iY5OzUiSc",
+	"json": "{\"id\":\"mYMNn2iY5OzUiSc\",\"url\":\"https://contentbloom.com/services/digital-marketing/\",\"uniqueKey\":\"https://contentbloom.com/services/digital-marketing\",\"method\":\"GET\",\"noRetry\":false,\"retryCount\":0,\"errorMessages\":[],\"headers\":{},\"userData\":{\"__crawlee\":{\"crawlDepth\":1,\"enqueueStrategy\":\"same-domain\"}}}",
+	"method": "GET",
+	"orderNo": 1790773032889,
+	"retryCount": 0,
+	"uniqueKey": "https://contentbloom.com/services/digital-marketing",
+	"url": "https://contentbloom.com/services/digital-marketing/"
+}

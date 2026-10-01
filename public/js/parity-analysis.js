@@ -73,5 +73,30 @@
     });
   }
 
+  // ---------- Live system vitals (vitals-widget) ----------
+  // Shown only on Site Parity and Site Analysis, as a bar in the Download
+  // CSV / PDF row. /vitals/widget.js reads this when the <vitals-widget> tags
+  // upgrade, so its <script> tag must come AFTER this file (both `defer`,
+  // which keeps document order).
+  // Colours point at main.css tokens, so --miti-accent stays the single source.
+  window.VitalsConfig = {
+    endpoint: "/vitals",
+    skin: "paper",
+    font: "'Familjen Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif",
+    loadFont: false,              // the pages already load Familjen Grotesk
+    colors: {
+      bg: "var(--miti-white)",
+      surface: "var(--miti-white)",
+      line: "var(--miti-border)",
+      ink: "var(--miti-ink)",
+      muted: "var(--miti-muted)",
+      accent: "var(--miti-accent)",
+      ok: "var(--green)",
+      warn: "var(--amber)",
+      crit: "var(--red)",
+      shadow: "var(--shadow-sm)",
+    },
+  };
+
   Object.assign(window.Miti, { setHidden, isHidden, parseUrlListText, pathFromUrl, confirmDialog });
 })();

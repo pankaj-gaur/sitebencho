@@ -1,0 +1,9 @@
+{
+	"id": "C6G8ojuXKbp6Ivr",
+	"json": "{\"id\":\"C6G8ojuXKbp6Ivr\",\"url\":\"https://contentbloom.com/services/business-intelligence/\",\"uniqueKey\":\"https://contentbloom.com/services/business-intelligence\",\"method\":\"GET\",\"noRetry\":false,\"retryCount\":0,\"errorMessages\":[],\"headers\":{},\"userData\":{\"__crawlee\":{\"crawlDepth\":1,\"enqueueStrategy\":\"same-domain\"}}}",
+	"method": "GET",
+	"orderNo": 1790773039653,
+	"retryCount": 0,
+	"uniqueKey": "https://contentbloom.com/services/business-intelligence",
+	"url": "https://contentbloom.com/services/business-intelligence/"
+}

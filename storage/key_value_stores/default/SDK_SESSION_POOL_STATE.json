@@ -3,7 +3,7 @@
   "retiredSessionsCount": 0,
   "sessions": [
     {
-      "id": "session_69nsD1LiC8",
+      "id": "session_iKC6W9ybEZ",
       "cookieJar": {
         "version": "tough-cookie@6.0.2",
         "storeType": "MemoryCookieStore",
@@ -13,171 +13,198 @@
         "prefixSecurity": "silent",
         "cookies": [
           {
-            "key": "sess_map",
-            "value": "sxcvzfqqtvyfxbswdwsdxwwasurxqwcswqwzrbtvcsvqfrtcfvyuvxvxvvdyazfxdbqcrbwyquaudzztqczzfxsvttctatcucsubdevaefyustfyqvqeavfsxfsevbuxqxwyvxxcbdusxyvebxcrtszfwubqrydzeqvdvcbcuwewsydq",
-            "expires": "2026-09-27T15:16:30.859Z",
-            "domain": "www.sabic.com",
-            "path": "/",
-            "secure": true,
-            "httpOnly": true,
-            "hostOnly": true,
-            "creation": "2026-09-27T14:26:30.862Z",
-            "lastAccessed": "2026-09-27T14:28:02.480Z"
-          },
-          {
-            "key": "cache_store",
-            "value": "arknkjADe3QPvzBijm9odgAAEykidsae",
-            "expires": "2026-09-27T15:16:30.859Z",
-            "domain": "www.sabic.com",
-            "path": "/",
-            "hostOnly": true,
-            "creation": "2026-09-27T14:26:30.863Z",
-            "lastAccessed": "2026-09-27T14:28:02.480Z"
-          },
-          {
             "key": "ASP.NET_SessionId",
-            "value": "bcuclkxyelwdkjhl4gq23mhw",
-            "expires": "2026-09-27T15:16:30.859Z",
-            "domain": "www.sabic.com",
+            "value": "c3uf1wcc5rjprcj4xlwe4hop",
+            "expires": "2026-10-01T07:56:49.557Z",
+            "domain": "dev-staging.sabic.com",
             "path": "/",
-            "secure": true,
             "httpOnly": true,
             "hostOnly": true,
-            "creation": "2026-09-27T14:26:30.863Z",
-            "lastAccessed": "2026-09-27T14:28:02.480Z"
-          },
-          {
-            "key": "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/webpage",
-            "value": "KauoZhoKltyoCcIR95TUdcXmQq5eejWSPTSX9AZh4as890klbb3ZE5J3-Abbb1SDB9z1hsYy5FvDpj0fBEGG2WqQJd81",
-            "expires": "2026-09-27T15:16:44.289Z",
-            "domain": "www.sabic.com",
-            "path": "/",
-            "secure": true,
-            "httpOnly": true,
-            "hostOnly": true,
-            "creation": "2026-09-27T14:26:30.864Z",
-            "lastAccessed": "2026-09-27T14:28:02.480Z"
+            "creation": "2026-10-01T07:06:48.667Z",
+            "lastAccessed": "2026-10-01T07:09:34.587Z"
           },
           {
             "key": "cookies_accepted",
             "value": "false",
-            "expires": "2027-09-27T14:26:28.000Z",
-            "domain": "www.sabic.com",
+            "expires": "2027-10-01T07:06:45.000Z",
+            "domain": "dev-staging.sabic.com",
             "path": "/",
-            "secure": true,
             "hostOnly": true,
-            "creation": "2026-09-27T14:26:30.864Z",
-            "lastAccessed": "2026-09-27T14:28:02.480Z"
+            "creation": "2026-10-01T07:06:48.679Z",
+            "lastAccessed": "2026-10-01T07:09:34.587Z"
           },
           {
             "key": "cookies_marketing",
             "value": "true",
-            "expires": "2027-09-27T14:26:28.000Z",
-            "domain": "www.sabic.com",
+            "expires": "2027-10-01T07:06:45.000Z",
+            "domain": "dev-staging.sabic.com",
             "path": "/",
-            "secure": true,
             "hostOnly": true,
-            "creation": "2026-09-27T14:26:30.864Z",
-            "lastAccessed": "2026-09-27T14:28:02.480Z"
+            "creation": "2026-10-01T07:06:48.680Z",
+            "lastAccessed": "2026-10-01T07:09:34.587Z"
           },
           {
             "key": "cookies_statistical",
             "value": "true",
-            "expires": "2027-09-27T14:26:28.000Z",
-            "domain": "www.sabic.com",
+            "expires": "2027-10-01T07:06:45.000Z",
+            "domain": "dev-staging.sabic.com",
             "path": "/",
-            "secure": true,
             "hostOnly": true,
-            "creation": "2026-09-27T14:26:30.865Z",
-            "lastAccessed": "2026-09-27T14:28:02.480Z"
+            "creation": "2026-10-01T07:06:48.681Z",
+            "lastAccessed": "2026-10-01T07:09:34.587Z"
           },
           {
             "key": "_gcl_au",
-            "value": "1.1.862461843.1790519189",
-            "expires": "2026-12-26T14:26:29.000Z",
+            "value": "1.1.1034793225.1790838407",
+            "expires": "2026-12-30T07:06:47.000Z",
             "domain": "sabic.com",
             "path": "/",
             "hostOnly": false,
-            "creation": "2026-09-27T14:26:30.865Z",
-            "lastAccessed": "2026-09-27T14:28:02.480Z"
+            "creation": "2026-10-01T07:06:48.681Z",
+            "lastAccessed": "2026-10-01T07:15:11.273Z"
           },
           {
-            "key": "cookiesession1",
-            "value": "678B288F290825303597A13DC952EA2E",
-            "expires": "2027-09-27T14:26:29.601Z",
-            "domain": "www.sabic.com",
+            "key": "ASP.NET_SessionId",
+            "value": "dho3opncakwb5arfquf5q3xh",
+            "expires": "2026-10-01T08:02:40.003Z",
+            "domain": "www.sabic-genk.be",
             "path": "/",
             "secure": true,
             "httpOnly": true,
             "hostOnly": true,
-            "creation": "2026-09-27T14:26:30.874Z",
-            "lastAccessed": "2026-09-27T14:28:02.480Z"
+            "creation": "2026-10-01T07:12:40.003Z",
+            "lastAccessed": "2026-10-01T07:14:03.182Z"
           },
           {
-            "key": "_gid",
-            "value": "GA1.2.609822680.1790519191",
-            "expires": "2026-09-28T14:27:07.000Z",
-            "domain": "sabic.com",
+            "key": "cookiesession1",
+            "value": "678B288F65CE79FA6C17F8A7E709365C",
+            "expires": "2027-10-01T07:13:55.100Z",
+            "domain": "www.sabic-genk.be",
             "path": "/",
             "secure": true,
-            "hostOnly": false,
-            "creation": "2026-09-27T14:26:44.290Z",
-            "lastAccessed": "2026-09-27T14:28:02.480Z"
-          },
-          {
-            "key": "_twpid",
-            "value": "tw.1790519190999.31582970131871650",
-            "expires": "2027-10-22T14:26:39.409Z",
-            "domain": "sabic.com",
-            "path": "/",
-            "secure": true,
-            "hostOnly": false,
-            "creation": "2026-09-27T14:26:44.294Z",
-            "lastAccessed": "2026-09-27T14:28:02.480Z"
+            "httpOnly": true,
+            "hostOnly": true,
+            "creation": "2026-10-01T07:12:40.003Z",
+            "lastAccessed": "2026-10-01T07:14:03.182Z"
           },
           {
             "key": "_ga",
-            "value": "GA1.1.1338631208.1790519191",
-            "expires": "2027-11-01T14:27:07.431Z",
-            "domain": "sabic.com",
+            "value": "GA1.1.2081773559.1790838759",
+            "expires": "2027-11-05T07:14:01.929Z",
+            "domain": "sabic-genk.be",
             "path": "/",
             "secure": true,
             "hostOnly": false,
-            "creation": "2026-09-27T14:26:44.294Z",
-            "lastAccessed": "2026-09-27T14:28:02.480Z"
+            "creation": "2026-10-01T07:12:40.003Z",
+            "lastAccessed": "2026-10-01T07:14:03.182Z"
           },
           {
-            "key": "_twsid",
-            "value": "1790519190999-631155038.1.1790519227502",
-            "expires": "2027-10-22T14:27:07.502Z",
-            "domain": "sabic.com",
+            "key": "_ga_RCM6F09K5R",
+            "value": "GS2.1.s1790838758$o1$g1$t1790838842$j37$l0$h0",
+            "expires": "2027-11-05T07:14:02.879Z",
+            "domain": "sabic-genk.be",
             "path": "/",
             "secure": true,
             "hostOnly": false,
-            "creation": "2026-09-27T14:26:44.294Z",
-            "lastAccessed": "2026-09-27T14:28:02.480Z"
+            "creation": "2026-10-01T07:12:40.003Z",
+            "lastAccessed": "2026-10-01T07:14:03.182Z"
           },
           {
-            "key": "_ga_DVJWG24X3N",
-            "value": "GS2.1.s1790519191$o1$g1$t1790519227$j24$l0$h1728254080",
-            "expires": "2027-11-01T14:27:07.430Z",
-            "domain": "sabic.com",
+            "key": "cookies_accepted",
+            "value": "false",
+            "expires": "2027-10-01T07:12:39.000Z",
+            "domain": "www.sabic-genk.be",
             "path": "/",
             "secure": true,
-            "hostOnly": false,
-            "creation": "2026-09-27T14:26:44.294Z",
-            "lastAccessed": "2026-09-27T14:28:02.480Z"
+            "hostOnly": true,
+            "creation": "2026-10-01T07:12:40.003Z",
+            "lastAccessed": "2026-10-01T07:14:03.182Z"
+          },
+          {
+            "key": "cookies_marketing",
+            "value": "true",
+            "expires": "2027-10-01T07:12:39.000Z",
+            "domain": "www.sabic-genk.be",
+            "path": "/",
+            "secure": true,
+            "hostOnly": true,
+            "creation": "2026-10-01T07:12:40.003Z",
+            "lastAccessed": "2026-10-01T07:14:03.182Z"
+          },
+          {
+            "key": "cookies_statistical",
+            "value": "true",
+            "expires": "2027-10-01T07:12:39.000Z",
+            "domain": "www.sabic-genk.be",
+            "path": "/",
+            "secure": true,
+            "hostOnly": true,
+            "creation": "2026-10-01T07:12:40.003Z",
+            "lastAccessed": "2026-10-01T07:14:03.182Z"
+          },
+          {
+            "key": "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/webpage",
+            "value": "LEiwyWeJVa5dCfMbTjaTOvKhQnjBaTD-7K-mRzkAxPYY6hoBBmO6mxZs5-iTVy8NhBqxwbHFVobbON7F20T5E8vVt_g1",
+            "expires": "2026-10-01T08:03:06.386Z",
+            "domain": "www.sabic-genk.be",
+            "path": "/",
+            "secure": true,
+            "httpOnly": true,
+            "hostOnly": true,
+            "creation": "2026-10-01T07:13:06.386Z",
+            "lastAccessed": "2026-10-01T07:14:03.182Z"
+          },
+          {
+            "key": "ASP.NET_SessionId",
+            "value": "1ki4rkeuicaevcwvmkeo3ymx",
+            "expires": "2026-10-01T08:04:11.306Z",
+            "domain": "dev-staging-genk.sabic.com",
+            "path": "/",
+            "httpOnly": true,
+            "hostOnly": true,
+            "creation": "2026-10-01T07:14:11.293Z",
+            "lastAccessed": "2026-10-01T07:15:11.273Z"
+          },
+          {
+            "key": "cookies_accepted",
+            "value": "false",
+            "expires": "2027-10-01T07:14:08.000Z",
+            "domain": "dev-staging-genk.sabic.com",
+            "path": "/",
+            "hostOnly": true,
+            "creation": "2026-10-01T07:14:11.293Z",
+            "lastAccessed": "2026-10-01T07:15:11.273Z"
+          },
+          {
+            "key": "cookies_marketing",
+            "value": "true",
+            "expires": "2027-10-01T07:14:08.000Z",
+            "domain": "dev-staging-genk.sabic.com",
+            "path": "/",
+            "hostOnly": true,
+            "creation": "2026-10-01T07:14:11.293Z",
+            "lastAccessed": "2026-10-01T07:15:11.273Z"
+          },
+          {
+            "key": "cookies_statistical",
+            "value": "true",
+            "expires": "2027-10-01T07:14:08.000Z",
+            "domain": "dev-staging-genk.sabic.com",
+            "path": "/",
+            "hostOnly": true,
+            "creation": "2026-10-01T07:14:11.293Z",
+            "lastAccessed": "2026-10-01T07:15:11.273Z"
           }
         ]
       },
       "userData": {},
       "maxErrorScore": 20,
       "errorScoreDecrement": 0.5,
-      "expiresAt": "2026-09-27T15:16:26.126Z",
-      "createdAt": "2026-09-27T14:26:26.126Z",
-      "usageCount": 17,
+      "expiresAt": "2026-10-01T07:56:38.837Z",
+      "createdAt": "2026-10-01T07:06:38.837Z",
+      "usageCount": 78,
       "maxUsageCount": 100000,
-      "errorScore": 5
+      "errorScore": 0
     }
   ]
 }

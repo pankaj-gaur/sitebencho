@@ -1,0 +1,9 @@
+{
+	"id": "GMdWgrJ64NJSUv1",
+	"json": "{\"id\":\"GMdWgrJ64NJSUv1\",\"url\":\"https://contentbloom.com/blog/accelerating-strategic-digital-transformation-with-mach/\",\"loadedUrl\":\"https://contentbloom.com/blog/accelerating-strategic-digital-transformation-with-mach/\",\"uniqueKey\":\"https://contentbloom.com/blog/accelerating-strategic-digital-transformation-with-mach\",\"method\":\"GET\",\"noRetry\":false,\"retryCount\":1,\"errorMessages\":[\"page.title: Target page, context or browser has been closed\\n    at PlaywrightCrawler.requestHandler (C:\\\\Projects\\\\SiteBencho\\\\sitebencho\\\\crawler.js:290:35)\\n    at async wrap (C:\\\\Projects\\\\SiteBencho\\\\sitebencho\\\\node_modules\\\\@apify\\\\timeout\\\\cjs\\\\index.cjs:56:21)\"],\"headers\":{},\"userData\":{\"__crawlee\":{\"state\":5}}}",
+	"method": "GET",
+	"orderNo": 1790767465271,
+	"retryCount": 1,
+	"uniqueKey": "https://contentbloom.com/blog/accelerating-strategic-digital-transformation-with-mach",
+	"url": "https://contentbloom.com/blog/accelerating-strategic-digital-transformation-with-mach/"
+}

@@ -1,0 +1,9 @@
+{
+	"id": "ohYFyaAaSlb8wjX",
+	"json": "{\"id\":\"ohYFyaAaSlb8wjX\",\"url\":\"https://contentbloom.com/services/content-management/\",\"uniqueKey\":\"https://contentbloom.com/services/content-management\",\"method\":\"GET\",\"noRetry\":false,\"retryCount\":0,\"errorMessages\":[],\"headers\":{},\"userData\":{\"__crawlee\":{\"crawlDepth\":1,\"enqueueStrategy\":\"same-domain\"}}}",
+	"method": "GET",
+	"orderNo": 1790767360607,
+	"retryCount": 0,
+	"uniqueKey": "https://contentbloom.com/services/content-management",
+	"url": "https://contentbloom.com/services/content-management/"
+}

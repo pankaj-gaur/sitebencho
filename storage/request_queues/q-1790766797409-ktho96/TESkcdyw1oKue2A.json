@@ -1,0 +1,9 @@
+{
+	"id": "TESkcdyw1oKue2A",
+	"json": "{\"id\":\"TESkcdyw1oKue2A\",\"url\":\"https://contentbloom.com/blog/sitecore-symposium-2022-fast-facts-and-faqs/\",\"uniqueKey\":\"https://contentbloom.com/blog/sitecore-symposium-2022-fast-facts-and-faqs\",\"method\":\"GET\",\"noRetry\":false,\"retryCount\":1,\"errorMessages\":[\"Error: browserController.newPage() failed: KyVhdKDw8PxtcEttjSq-K\\nCause:browserContext.newPage: Target page, context or browser has been closed.\\n    at BrowserPool._createPageForBrowser (C:\\\\Projects\\\\SiteBencho\\\\sitebencho\\\\node_modules\\\\@crawlee\\\\browser-pool\\\\browser-pool.js:413:19)\\n    at async C:\\\\Projects\\\\SiteBencho\\\\sitebencho\\\\node_modules\\\\@crawlee\\\\browser-pool\\\\browser-pool.js:303:20\"],\"headers\":{},\"userData\":{\"__crawlee\":{\"state\":5}}}",
+	"method": "GET",
+	"orderNo": 1790766893966,
+	"retryCount": 1,
+	"uniqueKey": "https://contentbloom.com/blog/sitecore-symposium-2022-fast-facts-and-faqs",
+	"url": "https://contentbloom.com/blog/sitecore-symposium-2022-fast-facts-and-faqs/"
+}

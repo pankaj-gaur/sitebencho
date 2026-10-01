@@ -1,0 +1,9 @@
+{
+	"id": "Kt5CPf0JRbTYat4",
+	"json": "{\"id\":\"Kt5CPf0JRbTYat4\",\"url\":\"https://contentbloom.com/blog/ais-thoughts-on-digital-experiences/\",\"loadedUrl\":\"https://contentbloom.com/blog/ais-thoughts-on-digital-experiences/\",\"uniqueKey\":\"https://contentbloom.com/blog/ais-thoughts-on-digital-experiences\",\"method\":\"GET\",\"noRetry\":false,\"retryCount\":1,\"errorMessages\":[\"page.$$eval: Target crashed \\n    at extractUrlsFromPage (C:\\\\Projects\\\\SiteBencho\\\\sitebencho\\\\node_modules\\\\@crawlee\\\\browser\\\\internals\\\\browser-crawler.js:509:30)\\n    at browserCrawlerEnqueueLinks (C:\\\\Projects\\\\SiteBencho\\\\sitebencho\\\\node_modules\\\\@crawlee\\\\browser\\\\internals\\\\browser-crawler.js:485:24)\\n    at crawlingContext.enqueueLinks (C:\\\\Projects\\\\SiteBencho\\\\sitebencho\\\\node_modules\\\\@crawlee\\\\browser\\\\internals\\\\browser-crawler.js:322:20)\\n    at async PlaywrightCrawler.requestHandler (C:\\\\Projects\\\\SiteBencho\\\\sitebencho\\\\crawler.js:330:11)\\n    at async wrap (C:\\\\Projects\\\\SiteBencho\\\\sitebencho\\\\node_modules\\\\@apify\\\\timeout\\\\cjs\\\\index.cjs:56:21)\"],\"headers\":{},\"userData\":{\"__crawlee\":{\"state\":5}}}",
+	"method": "GET",
+	"orderNo": 1790766878070,
+	"retryCount": 1,
+	"uniqueKey": "https://contentbloom.com/blog/ais-thoughts-on-digital-experiences",
+	"url": "https://contentbloom.com/blog/ais-thoughts-on-digital-experiences/"
+}

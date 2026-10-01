@@ -1,0 +1,9 @@
+{
+	"id": "xnHZXOiBXModfqr",
+	"json": "{\"id\":\"xnHZXOiBXModfqr\",\"url\":\"https://contentbloom.com/services/custom-software-development/\",\"uniqueKey\":\"https://contentbloom.com/services/custom-software-development\",\"method\":\"GET\",\"noRetry\":false,\"retryCount\":0,\"errorMessages\":[],\"headers\":{},\"userData\":{\"__crawlee\":{\"crawlDepth\":1,\"enqueueStrategy\":\"same-domain\"}}}",
+	"method": "GET",
+	"orderNo": 1790767438279,
+	"retryCount": 0,
+	"uniqueKey": "https://contentbloom.com/services/custom-software-development",
+	"url": "https://contentbloom.com/services/custom-software-development/"
+}

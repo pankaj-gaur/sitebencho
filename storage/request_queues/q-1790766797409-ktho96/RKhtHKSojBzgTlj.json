@@ -1,0 +1,9 @@
+{
+	"id": "RKhtHKSojBzgTlj",
+	"json": "{\"id\":\"RKhtHKSojBzgTlj\",\"url\":\"https://contentbloom.com/blog/5-innovative-design-tips-to-leverage-your-websites-user-experience/\",\"loadedUrl\":\"https://contentbloom.com/blog/5-innovative-design-tips-to-leverage-your-websites-user-experience/\",\"uniqueKey\":\"https://contentbloom.com/blog/5-innovative-design-tips-to-leverage-your-websites-user-experience\",\"method\":\"GET\",\"noRetry\":false,\"retryCount\":1,\"errorMessages\":[\"page.title: Target page, context or browser has been closed\\n    at PlaywrightCrawler.requestHandler (C:\\\\Projects\\\\SiteBencho\\\\sitebencho\\\\crawler.js:290:35)\\n    at async wrap (C:\\\\Projects\\\\SiteBencho\\\\sitebencho\\\\node_modules\\\\@apify\\\\timeout\\\\cjs\\\\index.cjs:56:21)\"],\"headers\":{},\"userData\":{\"__crawlee\":{\"state\":5}}}",
+	"method": "GET",
+	"orderNo": 1790766893941,
+	"retryCount": 1,
+	"uniqueKey": "https://contentbloom.com/blog/5-innovative-design-tips-to-leverage-your-websites-user-experience",
+	"url": "https://contentbloom.com/blog/5-innovative-design-tips-to-leverage-your-websites-user-experience/"
+}

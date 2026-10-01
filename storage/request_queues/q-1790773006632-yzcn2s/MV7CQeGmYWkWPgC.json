@@ -1,0 +1,9 @@
+{
+	"id": "MV7CQeGmYWkWPgC",
+	"json": "{\"id\":\"MV7CQeGmYWkWPgC\",\"url\":\"https://contentbloom.com/services/content-management/sitecore/\",\"uniqueKey\":\"https://contentbloom.com/services/content-management/sitecore\",\"method\":\"GET\",\"noRetry\":false,\"retryCount\":0,\"errorMessages\":[],\"headers\":{},\"userData\":{\"__crawlee\":{\"crawlDepth\":1,\"enqueueStrategy\":\"same-domain\"}}}",
+	"method": "GET",
+	"orderNo": 1790773097976,
+	"retryCount": 0,
+	"uniqueKey": "https://contentbloom.com/services/content-management/sitecore",
+	"url": "https://contentbloom.com/services/content-management/sitecore/"
+}

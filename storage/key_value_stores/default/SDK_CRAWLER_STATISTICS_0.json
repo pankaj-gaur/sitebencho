@@ -1,56 +1,32 @@
 {
-  "requestsFinished": 12,
-  "requestsFailed": 2,
+  "requestsFinished": 0,
+  "requestsFailed": 0,
   "requestsRetries": 0,
-  "requestsFailedPerMinute": 1,
-  "requestsFinishedPerMinute": 7,
-  "requestMinDurationMillis": 3977,
-  "requestMaxDurationMillis": 13276,
-  "requestTotalFailedDurationMillis": 2157,
-  "requestTotalFinishedDurationMillis": 77930,
-  "crawlerStartedAt": "2026-09-27T14:26:24.103Z",
-  "crawlerFinishedAt": "2026-09-27T14:28:03.014Z",
-  "statsPersistedAt": "2026-09-27T14:28:03.014Z",
-  "crawlerRuntimeMillis": 99001,
-  "crawlerLastStartTimestamp": 1790519184013,
-  "requestRetryHistogram": [
-    14
-  ],
+  "requestsFailedPerMinute": 0,
+  "requestsFinishedPerMinute": 0,
+  "requestMinDurationMillis": null,
+  "requestMaxDurationMillis": 0,
+  "requestTotalFailedDurationMillis": 0,
+  "requestTotalFinishedDurationMillis": 0,
+  "crawlerStartedAt": "2026-10-01T07:05:31.994Z",
+  "crawlerFinishedAt": "2026-10-01T07:06:32.774Z",
+  "statsPersistedAt": "2026-10-01T07:06:32.774Z",
+  "crawlerRuntimeMillis": 64276,
+  "crawlerLastStartTimestamp": 1790838328498,
+  "requestRetryHistogram": [],
   "statsId": "0",
-  "requestAvgFailedDurationMillis": 1079,
-  "requestAvgFinishedDurationMillis": 6494,
-  "requestTotalDurationMillis": 80087,
-  "requestsTotal": 14,
-  "requestsWithStatusCode": {
-    "200": 12,
-    "406": 4
-  },
-  "errors": {
-    "C:\\Projects\\SiteBencho\\sitebencho\\crawler.js:274:17": {
-      "missing error code": {
-        "Error": {
-          "Blocked by bot protection (WAF, HTTP 406)": {
-            "count": 2
-          }
-        }
-      }
-    }
-  },
+  "requestAvgFailedDurationMillis": null,
+  "requestAvgFinishedDurationMillis": null,
+  "requestTotalDurationMillis": 0,
+  "requestsTotal": 0,
+  "requestsWithStatusCode": {},
+  "errors": {},
   "retryErrors": {
-    "C:\\Projects\\SiteBencho\\sitebencho\\crawler.js:274:17": {
-      "missing error code": {
-        "Error": {
-          "Blocked by bot protection (WAF, HTTP 406)": {
-            "count": 2
-          }
-        }
-      }
-    },
     "C:\\Projects\\SiteBencho\\sitebencho\\node_modules\\@crawlee\\playwright\\internals\\utils\\playwright-utils.js:168:17": {
       "missing error code": {
-        "TimeoutError": {
-          "page.goto: Timeout 25000ms exceeded.": {
-            "count": 1
+        "Error": {
+          "page.goto: net::ERR_EMPTY_RESPONSE at _": {
+            "count": 20
           }
         }
       }

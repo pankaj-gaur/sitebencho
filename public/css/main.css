@@ -305,6 +305,11 @@ svg.lucide {
   transition: all 0.18s var(--ease);
 }
 
+.account-menu a.account-plan {
+  color: var(--miti-accent);
+  background: var(--miti-accent-soft, rgba(217, 119, 87, 0.1));
+}
+
 .account-menu a:hover,
 .account-menu button:hover {
   background: var(--miti-surface);
@@ -319,4 +324,83 @@ svg.lucide {
 
 @media print {
   .account-menu { display: none; }
+}
+
+/* ---------- One-row header (logo · menu · account) ---------- */
+/* Pages opt in with <header class="miti-header miti-header--one-row">. */
+.miti-header--one-row {
+  flex-wrap: nowrap;
+}
+
+.miti-header--one-row .toolbar {
+  flex-wrap: nowrap;
+  justify-content: flex-end;
+  gap: 12px;
+  min-width: 0;
+}
+
+.miti-header--one-row .account-email {
+  max-width: 170px;
+}
+
+/* Admin and Sign out show as icons only (the name stays for screen readers and as a tooltip). */
+.miti-header--one-row .account-menu .account-icon {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  justify-content: center;
+  gap: 0;
+}
+
+.miti-header--one-row .account-menu .account-icon svg {
+  width: 16px;
+  height: 16px;
+}
+
+.miti-header--one-row .account-label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.miti-header--one-row .account-menu {
+  padding-right: 4px;
+}
+
+/* Narrow screens: let the menu and account panel drop below the logo. */
+@media (max-width: 1180px) {
+  .miti-header--one-row,
+  .miti-header--one-row .toolbar {
+    flex-wrap: wrap;
+  }
+}
+
+/* ---------- Report row with tools (Download CSV · PDF · Max pages · vitals) ---------- */
+/* Every item in the row takes the same height as the download buttons. */
+.report-links.report-links--tools {
+  align-items: stretch;
+  flex-wrap: wrap;
+}
+
+.report-links--tools .pages-field {
+  padding: 0 4px 0 15px;
+  gap: 8px;
+}
+
+.report-links--tools .pages-field span {
+  font-size: 11.5px;
+  letter-spacing: 0.05em;
+}
+
+/* Smaller box and number text, pill-shaped, so longer numbers still fit. */
+.report-links--tools .pages-field input {
+  width: 54px;
+  height: 22px;
+  align-self: center;
+  padding: 0 6px;
+  font-size: 11px;
+  border-radius: var(--radius-pill);
 }

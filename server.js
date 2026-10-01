@@ -38,17 +38,43 @@ process.on('uncaughtException', (err) => {
 // Keycard sign-in (settings and plans live in ./auth.js).
 const auth = require('./auth');
 
+// Live system vitals bar on Site Parity and Site Analysis (npm: vitals-widget).
+// Serves /vitals/widget.js, /vitals/metrics and /vitals/stream from this process.
+const { createVitals } = require('vitals-widget');
+const vitals = createVitals({
+  app: { mode: 'self', label: 'SiteMiti' }, // "this app" = the SiteMiti server itself
+  cors: [],                             // same-origin only: no Access-Control-Allow-Origin header
+  allowQueryApp: false,                 // users can't ask it to inspect other processes via ?app= / ?pid=
+});
 const app = express();
 // If Miti runs behind nginx, IIS or Azure, uncomment so rate limits see real client IPs:
 // app.set('trust proxy', 1);
+// Keycard first: its payment webhook needs the raw request body (it parses
+// JSON itself for its other routes).
+app.use(auth.basePath, auth.router);   // sign-in, plans, payments and admin pages under /auth
 app.use(express.json());
-app.use(auth.basePath, auth.router);   // sign-in and admin pages under /auth
 // The logo and favicon are public so the sign-in page can show them; everything else needs sign-in.
 ['miti-logo.png', 'favicon-64x64.png'].forEach((file) => {
   app.get(`/${file}`, (req, res) => res.sendFile(path.join(__dirname, 'public', file)));
 });
 app.use(auth.requireAuth);             // everything registered below needs sign-in (pages, /api, snapshots)
+app.use(vitals.handler);               // /vitals/* — behind sign-in, before workspaces (it needs no per-user state)
 app.use(workspaceContext);             // each signed-in user gets their own crawl/test/scan state (see below)
+
+// What the header needs: sign-in mode, who's signed in, their plan (full mode) and page limit.
+app.get('/api/account', (req, res) => {
+  const u = req.user;
+  const lic = u.access && u.access.license;
+  const maxPages = auth.getLimit(u, 'maxPages', 200);
+  res.json({
+    mode: auth.mode,                                         // full | signin | off
+    user: auth.mode === 'off' ? null : { email: u.email, isAdmin: !!u.isAdmin },
+    plan: auth.mode !== 'full' ? null
+      : lic ? { name: lic.planName || 'Plan', daysLeft: lic.daysLeft, expiresAt: lic.expiresAt }
+        : { name: 'Free' },
+    limits: { maxPages: Number.isFinite(maxPages) ? maxPages : null },
+  });
+});
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Every catch block in this file should call this rather than swallow the

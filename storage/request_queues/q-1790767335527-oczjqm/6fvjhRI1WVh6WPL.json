@@ -1,0 +1,9 @@
+{
+	"id": "6fvjhRI1WVh6WPL",
+	"json": "{\"id\":\"6fvjhRI1WVh6WPL\",\"url\":\"https://contentbloom.com/blog/author/z-xu/\",\"uniqueKey\":\"https://contentbloom.com/blog/author/z-xu\",\"method\":\"GET\",\"noRetry\":false,\"retryCount\":0,\"errorMessages\":[],\"headers\":{},\"userData\":{\"__crawlee\":{\"crawlDepth\":1,\"enqueueStrategy\":\"same-domain\"}}}",
+	"method": "GET",
+	"orderNo": 1790767435300,
+	"retryCount": 0,
+	"uniqueKey": "https://contentbloom.com/blog/author/z-xu",
+	"url": "https://contentbloom.com/blog/author/z-xu/"
+}

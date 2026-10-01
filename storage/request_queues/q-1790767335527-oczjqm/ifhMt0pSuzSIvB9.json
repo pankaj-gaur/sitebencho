@@ -1,0 +1,9 @@
+{
+	"id": "ifhMt0pSuzSIvB9",
+	"json": "{\"id\":\"ifhMt0pSuzSIvB9\",\"url\":\"https://contentbloom.com/services/content-management/sdl-tridion-sites/\",\"uniqueKey\":\"https://contentbloom.com/services/content-management/sdl-tridion-sites\",\"method\":\"GET\",\"noRetry\":false,\"retryCount\":0,\"errorMessages\":[],\"headers\":{},\"userData\":{\"__crawlee\":{\"crawlDepth\":1,\"enqueueStrategy\":\"same-domain\"}}}",
+	"method": "GET",
+	"orderNo": 1790767454553,
+	"retryCount": 0,
+	"uniqueKey": "https://contentbloom.com/services/content-management/sdl-tridion-sites",
+	"url": "https://contentbloom.com/services/content-management/sdl-tridion-sites/"
+}

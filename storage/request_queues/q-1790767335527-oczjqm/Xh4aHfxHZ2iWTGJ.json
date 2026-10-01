@@ -1,0 +1,9 @@
+{
+	"id": "Xh4aHfxHZ2iWTGJ",
+	"json": "{\"id\":\"Xh4aHfxHZ2iWTGJ\",\"url\":\"https://contentbloom.com/sitecore-symposium/\",\"uniqueKey\":\"https://contentbloom.com/sitecore-symposium\",\"method\":\"GET\",\"noRetry\":false,\"retryCount\":0,\"errorMessages\":[],\"headers\":{},\"userData\":{\"__crawlee\":{\"crawlDepth\":1,\"enqueueStrategy\":\"same-domain\"}}}",
+	"method": "GET",
+	"orderNo": 1790767441226,
+	"retryCount": 0,
+	"uniqueKey": "https://contentbloom.com/sitecore-symposium",
+	"url": "https://contentbloom.com/sitecore-symposium/"
+}
